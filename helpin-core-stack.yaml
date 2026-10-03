@@ -1,0 +1,715 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: >
+  HelpIn Core Stack:
+    - VPC with public, private application, and private data subnets across two Availability Zones
+    - Internet Gateway, one NAT Gateway, and separate route tables
+    - S3 Gateway VPC endpoint for private access to Amazon S3
+    - Security groups for Lambda functions and Amazon RDS MySQL
+    - Amazon RDS MySQL Multi-AZ database instance in private data subnets
+    - Amazon S3 assets bucket with versioning, KMS encryption, and lifecycle rules
+    - Amazon S3 deployment bucket for Lambda ZIP packages
+    - Amazon Cognito User Pool, App Client, Admin group, and User group
+    - AWS Secrets Manager secret for RDS credentials using KMS encryption
+
+Parameters:
+
+  ProjectName:
+    Type: String
+    Default: helpin
+    Description: Project name used for resource names and tags
+    AllowedPattern: '^[a-z][a-z0-9-]*$'
+    ConstraintDescription: Use lowercase letters, numbers, and hyphens, beginning with a letter
+
+  VpcCidr:
+    Type: String
+    Default: 10.0.0.0/16
+    Description: CIDR block for the HelpIn VPC
+
+  PublicSubnet1Cidr:
+    Type: String
+    Default: 10.0.1.0/24
+    Description: CIDR block for public subnet A
+
+  PublicSubnet2Cidr:
+    Type: String
+    Default: 10.0.2.0/24
+    Description: CIDR block for public subnet B
+
+  PrivateAppSubnet1Cidr:
+    Type: String
+    Default: 10.0.10.0/24
+    Description: CIDR block for private application subnet A
+
+  PrivateAppSubnet2Cidr:
+    Type: String
+    Default: 10.0.20.0/24
+    Description: CIDR block for private application subnet B
+
+  PrivateDataSubnet1Cidr:
+    Type: String
+    Default: 10.0.11.0/24
+    Description: CIDR block for private data subnet A
+
+  PrivateDataSubnet2Cidr:
+    Type: String
+    Default: 10.0.21.0/24
+    Description: CIDR block for private data subnet B
+
+  DBName:
+    Type: String
+    Default: helpindb
+    Description: Initial MySQL database name
+    AllowedPattern: '^[a-zA-Z][a-zA-Z0-9]*$'
+    ConstraintDescription: Database name must begin with a letter and contain only letters and numbers
+
+  DBInstanceClass:
+    Type: String
+    Default: db.t3.micro
+    Description: RDS MySQL instance class
+    AllowedValues:
+      - db.t3.micro
+      - db.t3.small
+
+  DBAllocatedStorage:
+    Type: Number
+    Default: 20
+    MinValue: 20
+    MaxValue: 100
+    Description: Allocated storage for the RDS database in GB
+
+  DBBackupRetentionDays:
+    Type: Number
+    Default: 7
+    MinValue: 1
+    MaxValue: 35
+    Description: Number of days to retain automated RDS backups
+
+Resources:
+
+  ############################################################
+  # VPC + Subnets
+  ############################################################
+
+  HelpInVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-vpc'
+        - Key: Project
+          Value: !Ref ProjectName
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref HelpInVPC
+      CidrBlock: !Ref PublicSubnet1Cidr
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-public-subnet-a'
+        - Key: Project
+          Value: !Ref ProjectName
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref HelpInVPC
+      CidrBlock: !Ref PublicSubnet2Cidr
+      AvailabilityZone: !Select [1, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-public-subnet-b'
+        - Key: Project
+          Value: !Ref ProjectName
+
+  PrivateAppSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref HelpInVPC
+      CidrBlock: !Ref PrivateAppSubnet1Cidr
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-private-app-subnet-a'
+        - Key: Project
+          Value: !Ref ProjectName
+
+  PrivateAppSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref HelpInVPC
+      CidrBlock: !Ref PrivateAppSubnet2Cidr
+      AvailabilityZone: !Select [1, !GetAZs '']
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-private-app-subnet-b'
+        - Key: Project
+          Value: !Ref ProjectName
+
+  PrivateDataSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref HelpInVPC
+      CidrBlock: !Ref PrivateDataSubnet1Cidr
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-private-data-subnet-a'
+        - Key: Project
+          Value: !Ref ProjectName
+
+  PrivateDataSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref HelpInVPC
+      CidrBlock: !Ref PrivateDataSubnet2Cidr
+      AvailabilityZone: !Select [1, !GetAZs '']
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-private-data-subnet-b'
+        - Key: Project
+          Value: !Ref ProjectName
+
+  ############################################################
+  # Internet Gateway + Public Routing
+  ############################################################
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-igw'
+        - Key: Project
+          Value: !Ref ProjectName
+
+  AttachInternetGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref HelpInVPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref HelpInVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-public-rt'
+        - Key: Project
+          Value: !Ref ProjectName
+
+  PublicDefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachInternetGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  ############################################################
+  # NAT Gateway + Private Application Routing
+  ############################################################
+
+  NatEip:
+    Type: AWS::EC2::EIP
+    DependsOn: AttachInternetGateway
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-nat-eip'
+        - Key: Project
+          Value: !Ref ProjectName
+
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    DependsOn: AttachInternetGateway
+    Properties:
+      AllocationId: !GetAtt NatEip.AllocationId
+      SubnetId: !Ref PublicSubnet1
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-nat-gateway'
+        - Key: Project
+          Value: !Ref ProjectName
+
+  PrivateAppRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref HelpInVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-private-app-rt'
+        - Key: Project
+          Value: !Ref ProjectName
+
+  PrivateAppDefaultRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateAppRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+
+  PrivateAppSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateAppSubnet1
+      RouteTableId: !Ref PrivateAppRouteTable
+
+  PrivateAppSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateAppSubnet2
+      RouteTableId: !Ref PrivateAppRouteTable
+
+  ############################################################
+  # Private Data Routing - No Internet Route
+  ############################################################
+
+  PrivateDataRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref HelpInVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-private-data-rt'
+        - Key: Project
+          Value: !Ref ProjectName
+
+  PrivateDataSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateDataSubnet1
+      RouteTableId: !Ref PrivateDataRouteTable
+
+  PrivateDataSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateDataSubnet2
+      RouteTableId: !Ref PrivateDataRouteTable
+
+  ############################################################
+  # S3 Gateway VPC Endpoint
+  ############################################################
+
+  S3GatewayEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref HelpInVPC
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
+      VpcEndpointType: Gateway
+      RouteTableIds:
+        - !Ref PrivateAppRouteTable
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-s3-gateway-endpoint'
+        - Key: Project
+          Value: !Ref ProjectName
+
+  ############################################################
+  # Security Groups
+  ############################################################
+
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for HelpIn Lambda functions
+      VpcId: !Ref HelpInVPC
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+          Description: Allow Lambda outbound access
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-lambda-sg'
+        - Key: Project
+          Value: !Ref ProjectName
+
+  RDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for the HelpIn RDS MySQL database
+      VpcId: !Ref HelpInVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !Ref LambdaSecurityGroup
+          Description: Allow MySQL access from HelpIn Lambda functions only
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-rds-sg'
+        - Key: Project
+          Value: !Ref ProjectName
+
+  ############################################################
+  # S3 Assets Bucket - KMS Encryption + Lifecycle
+  ############################################################
+
+  HelpInAssetsBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub '${ProjectName}-assets-${AWS::AccountId}-${AWS::Region}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+            BucketKeyEnabled: true
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: MoveOldObjectsToLowerCostStorage
+            Status: Enabled
+            Prefix: old/
+            Transitions:
+              - StorageClass: STANDARD_IA
+                TransitionInDays: 30
+              - StorageClass: GLACIER
+                TransitionInDays: 90
+
+          - Id: ArchiveBackupExports
+            Status: Enabled
+            Prefix: backups/
+            Transitions:
+              - StorageClass: GLACIER
+                TransitionInDays: 90
+
+          - Id: DeleteTemporaryFiles
+            Status: Enabled
+            Prefix: temp/
+            ExpirationInDays: 30
+
+          - Id: ArchiveNoncurrentVersions
+            Status: Enabled
+            Prefix: ''
+            NoncurrentVersionTransitions:
+              - StorageClass: STANDARD_IA
+                TransitionInDays: 30
+              - StorageClass: GLACIER
+                TransitionInDays: 90
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 365
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-assets-bucket'
+        - Key: Project
+          Value: !Ref ProjectName
+
+  ############################################################
+  # S3 Lambda ZIP Deployment Bucket - KMS Encryption
+  ############################################################
+
+  HelpInLambdaDeploymentBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub '${ProjectName}-lambda-deployment-${AWS::AccountId}-${AWS::Region}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+            BucketKeyEnabled: true
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireOldLambdaPackageVersions
+            Status: Enabled
+            Prefix: lambda/
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 30
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-lambda-deployment-bucket'
+        - Key: Project
+          Value: !Ref ProjectName
+
+  ############################################################
+  # Secrets Manager - KMS-Encrypted RDS Credentials
+  ############################################################
+
+  HelpInDBSecret:
+    Type: AWS::SecretsManager::Secret
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Name: !Sub '${ProjectName}/rds/mysql/master'
+      Description: HelpIn RDS MySQL master credentials
+      GenerateSecretString:
+        SecretStringTemplate: '{"username":"helpinadmin"}'
+        GenerateStringKey: password
+        PasswordLength: 20
+        ExcludeCharacters: '"@/\\'
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-rds-secret'
+        - Key: Project
+          Value: !Ref ProjectName
+
+  ############################################################
+  # RDS MySQL Multi-AZ Database - KMS Encryption
+  ############################################################
+
+  HelpInDBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: HelpIn private data subnet group for RDS MySQL
+      DBSubnetGroupName: !Sub '${ProjectName}-db-subnet-group'
+      SubnetIds:
+        - !Ref PrivateDataSubnet1
+        - !Ref PrivateDataSubnet2
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-db-subnet-group'
+        - Key: Project
+          Value: !Ref ProjectName
+
+  HelpInDBInstance:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      DBInstanceIdentifier: !Sub '${ProjectName}-mysql-db'
+      DBName: !Ref DBName
+      Engine: mysql
+      DBInstanceClass: !Ref DBInstanceClass
+      AllocatedStorage: !Ref DBAllocatedStorage
+      StorageType: gp2
+      StorageEncrypted: true
+      MultiAZ: true
+      PubliclyAccessible: false
+      BackupRetentionPeriod: !Ref DBBackupRetentionDays
+      CopyTagsToSnapshot: true
+      DeleteAutomatedBackups: true
+      DBSubnetGroupName: !Ref HelpInDBSubnetGroup
+      VPCSecurityGroups:
+        - !Ref RDSSecurityGroup
+      MasterUsername: !Sub '{{resolve:secretsmanager:${HelpInDBSecret}:SecretString:username}}'
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${HelpInDBSecret}:SecretString:password}}'
+      AutoMinorVersionUpgrade: true
+      DeletionProtection: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-mysql-db'
+        - Key: Project
+          Value: !Ref ProjectName
+
+  HelpInDBSecretAttachment:
+    Type: AWS::SecretsManager::SecretTargetAttachment
+    Properties:
+      SecretId: !Ref HelpInDBSecret
+      TargetId: !Ref HelpInDBInstance
+      TargetType: AWS::RDS::DBInstance
+
+  ############################################################
+  # Cognito User Pool, Client, and Groups
+  ############################################################
+
+  HelpInUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub '${ProjectName}-user-pool'
+      UsernameConfiguration:
+        CaseSensitive: false
+      MfaConfiguration: 'OFF'
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          RequireUppercase: true
+          TemporaryPasswordValidityDays: 7
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+      UserPoolTags:
+        Project: !Ref ProjectName
+
+  HelpInUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub '${ProjectName}-web-client'
+      UserPoolId: !Ref HelpInUserPool
+      GenerateSecret: false
+      PreventUserExistenceErrors: ENABLED
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      AccessTokenValidity: 60
+      IdTokenValidity: 60
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: minutes
+        IdToken: minutes
+        RefreshToken: days
+
+  CognitoAdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: Admin
+      Description: HelpIn administrator users
+      Precedence: 1
+      UserPoolId: !Ref HelpInUserPool
+
+  CognitoUserGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: User
+      Description: HelpIn standard users
+      Precedence: 2
+      UserPoolId: !Ref HelpInUserPool
+
+Outputs:
+
+  VpcId:
+    Description: HelpIn VPC ID
+    Value: !Ref HelpInVPC
+    Export:
+      Name: !Sub '${AWS::StackName}-VpcId'
+
+  PublicSubnet1Id:
+    Description: Public subnet A ID
+    Value: !Ref PublicSubnet1
+    Export:
+      Name: !Sub '${AWS::StackName}-PublicSubnet1Id'
+
+  PublicSubnet2Id:
+    Description: Public subnet B ID
+    Value: !Ref PublicSubnet2
+    Export:
+      Name: !Sub '${AWS::StackName}-PublicSubnet2Id'
+
+  PrivateAppSubnet1Id:
+    Description: Private application subnet A ID for Lambda
+    Value: !Ref PrivateAppSubnet1
+    Export:
+      Name: !Sub '${AWS::StackName}-PrivateAppSubnet1Id'
+
+  PrivateAppSubnet2Id:
+    Description: Private application subnet B ID for Lambda
+    Value: !Ref PrivateAppSubnet2
+    Export:
+      Name: !Sub '${AWS::StackName}-PrivateAppSubnet2Id'
+
+  PrivateDataSubnet1Id:
+    Description: Private data subnet A ID for RDS
+    Value: !Ref PrivateDataSubnet1
+    Export:
+      Name: !Sub '${AWS::StackName}-PrivateDataSubnet1Id'
+
+  PrivateDataSubnet2Id:
+    Description: Private data subnet B ID for RDS
+    Value: !Ref PrivateDataSubnet2
+    Export:
+      Name: !Sub '${AWS::StackName}-PrivateDataSubnet2Id'
+
+  LambdaSecurityGroupId:
+    Description: Lambda security group ID
+    Value: !Ref LambdaSecurityGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-LambdaSecurityGroupId'
+
+  RDSSecurityGroupId:
+    Description: RDS security group ID
+    Value: !Ref RDSSecurityGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-RDSSecurityGroupId'
+
+  DBEndpointAddress:
+    Description: RDS MySQL endpoint address
+    Value: !GetAtt HelpInDBInstance.Endpoint.Address
+    Export:
+      Name: !Sub '${AWS::StackName}-DBEndpointAddress'
+
+  DBEndpointPort:
+    Description: RDS MySQL endpoint port
+    Value: !GetAtt HelpInDBInstance.Endpoint.Port
+    Export:
+      Name: !Sub '${AWS::StackName}-DBEndpointPort'
+
+  DatabaseName:
+    Description: HelpIn database name
+    Value: !Ref DBName
+    Export:
+      Name: !Sub '${AWS::StackName}-DBName'
+
+  DBSecretArn:
+    Description: Secrets Manager ARN for RDS credentials
+    Value: !Ref HelpInDBSecret
+    Export:
+      Name: !Sub '${AWS::StackName}-DBSecretArn'
+
+  AssetsBucketName:
+    Description: S3 bucket for HelpIn images, logos, documents, and backups
+    Value: !Ref HelpInAssetsBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-AssetsBucketName'
+
+  LambdaDeploymentBucketName:
+    Description: S3 bucket for Lambda ZIP deployment packages
+    Value: !Ref HelpInLambdaDeploymentBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-LambdaDeploymentBucketName'
+
+  CognitoUserPoolId:
+    Description: Cognito User Pool ID
+    Value: !Ref HelpInUserPool
+    Export:
+      Name: !Sub '${AWS::StackName}-CognitoUserPoolId'
+
+  CognitoUserPoolClientId:
+    Description: Cognito User Pool Client ID
+    Value: !Ref HelpInUserPoolClient
+    Export:
+      Name: !Sub '${AWS::StackName}-CognitoUserPoolClientId'
+
+  CognitoAdminGroupName:
+    Description: Cognito Admin group name
+    Value: !Ref CognitoAdminGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-CognitoAdminGroupName'
+
+  CognitoUserGroupName:
+    Description: Cognito User group name
+    Value: !Ref CognitoUserGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-CognitoUserGroupName'
