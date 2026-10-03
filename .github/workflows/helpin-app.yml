@@ -1,0 +1,123 @@
+name: Deploy HelpIn Application CloudFormation Stack
+
+on:
+  workflow_dispatch:
+    inputs:
+      alert_email:
+        description: Optional email for SNS alerts
+        required: false
+        default: ''
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: List Files
+        run: ls -R
+        working-directory: ${{ github.workspace }}
+
+      - name: Build Lambda ZIP Packages
+        run: |
+          set -e
+          rm -rf build
+          mkdir -p build
+
+          for FUNCTION in search-function admin-function recommendation-function event-processor-function; do
+            SOURCE_DIR="lambda/${FUNCTION}"
+
+            if [ ! -d "$SOURCE_DIR" ]; then
+              echo "Missing Lambda source directory: $SOURCE_DIR"
+              exit 1
+            fi
+
+            if [ -f "$SOURCE_DIR/package.json" ]; then
+              npm install --omit=dev --prefix "$SOURCE_DIR"
+            fi
+
+            (
+              cd "$SOURCE_DIR"
+              zip -r "../../build/${FUNCTION}.zip" .
+            )
+          done
+
+      - name: Upload Lambda ZIP Packages
+        id: upload
+        run: |
+          set -e
+
+          DEPLOYMENT_BUCKET=$(aws cloudformation describe-stacks \
+            --stack-name helpin-core-stack \
+            --query "Stacks[0].Outputs[?OutputKey=='LambdaDeploymentBucketName'].OutputValue" \
+            --output text)
+
+          if [ -z "$DEPLOYMENT_BUCKET" ] || [ "$DEPLOYMENT_BUCKET" = "None" ]; then
+            echo "Unable to find the Lambda deployment bucket from helpin-core-stack"
+            exit 1
+          fi
+
+          S3_PREFIX="lambda/${GITHUB_SHA}"
+
+          aws s3 cp build/search-function.zip \
+            "s3://${DEPLOYMENT_BUCKET}/${S3_PREFIX}/search-function.zip"
+
+          aws s3 cp build/admin-function.zip \
+            "s3://${DEPLOYMENT_BUCKET}/${S3_PREFIX}/admin-function.zip"
+
+          aws s3 cp build/recommendation-function.zip \
+            "s3://${DEPLOYMENT_BUCKET}/${S3_PREFIX}/recommendation-function.zip"
+
+          aws s3 cp build/event-processor-function.zip \
+            "s3://${DEPLOYMENT_BUCKET}/${S3_PREFIX}/event-processor-function.zip"
+
+          echo "s3_prefix=${S3_PREFIX}" >> "$GITHUB_OUTPUT"
+
+      - name: Validate CloudFormation Template
+        run: |
+          aws cloudformation validate-template \
+            --template-body file://helpin-app-stack.yaml
+
+      - name: Deploy CloudFormation Stack
+        run: |
+          set -e
+          set -x
+          ls -la
+
+          aws cloudformation deploy \
+            --stack-name helpin-app-stack \
+            --template-file helpin-app-stack.yaml \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --parameter-overrides \
+              CoreStackName=helpin-core-stack \
+              SearchFunctionS3Key=${{ steps.upload.outputs.s3_prefix }}/search-function.zip \
+              AdminFunctionS3Key=${{ steps.upload.outputs.s3_prefix }}/admin-function.zip \
+              RecommendationFunctionS3Key=${{ steps.upload.outputs.s3_prefix }}/recommendation-function.zip \
+              EventProcessorFunctionS3Key=${{ steps.upload.outputs.s3_prefix }}/event-processor-function.zip \
+              AlertEmail="${{ github.event.inputs.alert_email }}" \
+            --no-fail-on-empty-changeset
+
+      - name: Show Stack Outputs
+        if: success()
+        run: |
+          aws cloudformation describe-stacks \
+            --stack-name helpin-app-stack \
+            --query "Stacks[0].Outputs" \
+            --output table
+
+      - name: Fetch Stack Events on Failure
+        if: failure()
+        run: |
+          aws cloudformation describe-stack-events \
+            --stack-name helpin-app-stack \
+            --max-items 30
