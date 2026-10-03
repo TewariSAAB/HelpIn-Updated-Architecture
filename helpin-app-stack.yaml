@@ -25,7 +25,7 @@ Parameters:
 
   LambdaRoleArn:
     Type: String
-    Default: arn:aws:iam::963324839991:role/LabRole
+    Default: arn:aws:iam::730978978969:role/LabRole
     Description: Existing AWS Academy LabRole ARN used by the Lambda functions
 
   LambdaRuntime:
