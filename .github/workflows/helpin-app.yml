@@ -34,7 +34,7 @@ jobs:
           rm -rf build
           mkdir -p build
 
-          for FUNCTION in search-function admin-function recommendation-function event-processor-function; do
+          for FUNCTION in search-function admin-function recommendation-function event-processor-function database-init-function; do
             SOURCE_DIR="lambda/${FUNCTION}"
 
             if [ ! -d "$SOURCE_DIR" ]; then
@@ -81,6 +81,9 @@ jobs:
           aws s3 cp build/event-processor-function.zip \
             "s3://${DEPLOYMENT_BUCKET}/${S3_PREFIX}/event-processor-function.zip"
 
+          aws s3 cp build/database-init-function.zip \
+            "s3://${DEPLOYMENT_BUCKET}/${S3_PREFIX}/database-init-function.zip"
+
           echo "s3_prefix=${S3_PREFIX}" >> "$GITHUB_OUTPUT"
 
       - name: Validate CloudFormation Template
@@ -104,6 +107,7 @@ jobs:
               AdminFunctionS3Key=${{ steps.upload.outputs.s3_prefix }}/admin-function.zip \
               RecommendationFunctionS3Key=${{ steps.upload.outputs.s3_prefix }}/recommendation-function.zip \
               EventProcessorFunctionS3Key=${{ steps.upload.outputs.s3_prefix }}/event-processor-function.zip \
+              DatabaseInitFunctionS3Key=${{ steps.upload.outputs.s3_prefix }}/database-init-function.zip \
               AlertEmail="${{ github.event.inputs.alert_email }}" \
             --no-fail-on-empty-changeset
 
