@@ -62,6 +62,11 @@ Parameters:
     Default: lambda/event-processor-function.zip
     Description: S3 object key for the Event Processor Lambda ZIP package
 
+  DatabaseInitFunctionS3Key:
+    Type: String
+    Default: lambda/database-init-function.zip
+    Description: S3 object key for the temporary database initialisation Lambda ZIP package
+
   AlertEmail:
     Type: String
     Default: ''
@@ -327,6 +332,47 @@ Resources:
         - Key: Project
           Value: !Ref ProjectName
 
+   DatabaseInitFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-database-init-function'
+      Description: Temporary function used to initialise HelpIn RDS tables and sample data
+      Runtime: !Ref LambdaRuntime
+      Handler: index.handler
+      Role: !Ref LambdaRoleArn
+      Timeout: 60
+      MemorySize: !Ref LambdaMemory
+
+      Code:
+        S3Bucket:
+          Fn::ImportValue: !Sub '${CoreStackName}-LambdaDeploymentBucketName'
+        S3Key: !Ref DatabaseInitFunctionS3Key
+
+      VpcConfig:
+        SubnetIds:
+          - Fn::ImportValue: !Sub '${CoreStackName}-PrivateAppSubnet1Id'
+          - Fn::ImportValue: !Sub '${CoreStackName}-PrivateAppSubnet2Id'
+        SecurityGroupIds:
+          - Fn::ImportValue: !Sub '${CoreStackName}-LambdaSecurityGroupId'
+
+      Environment:
+        Variables:
+          DB_HOST:
+            Fn::ImportValue: !Sub '${CoreStackName}-DBEndpointAddress'
+
+          DB_PORT:
+            Fn::ImportValue: !Sub '${CoreStackName}-DBEndpointPort'
+
+          DB_NAME:
+            Fn::ImportValue: !Sub '${CoreStackName}-DBName'
+
+          DB_SECRET_ARN:
+            Fn::ImportValue: !Sub '${CoreStackName}-DBSecretArn'
+
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
   SearchFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -349,6 +395,12 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${EventProcessorFunction}'
+      RetentionInDays: 30
+
+  DatabaseInitFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${DatabaseInitFunction}'
       RetentionInDays: 30
 
   HelpInEventQueueMapping:
