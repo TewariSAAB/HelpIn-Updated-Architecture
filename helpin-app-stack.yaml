@@ -332,7 +332,7 @@ Resources:
         - Key: Project
           Value: !Ref ProjectName
 
-   DatabaseInitFunction:
+  DatabaseInitFunction:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub '${ProjectName}-database-init-function'
