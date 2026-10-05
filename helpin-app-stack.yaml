@@ -792,7 +792,7 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${HelpInApi}/*/*/*'
 
-  HelpInApiDeploymentV2:
+  HelpInApiDeploymentV3:
     Type: AWS::ApiGateway::Deployment
     DependsOn:
       - ServicesGetMethod
@@ -820,7 +820,7 @@ Resources:
     Properties:
       StageName: prod
       RestApiId: !Ref HelpInApi
-      DeploymentId: !Ref HelpInApiDeploymentV2
+      DeploymentId: !Ref HelpInApiDeploymentV3
       Tags:
         - Key: Project
           Value: !Ref ProjectName
