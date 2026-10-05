@@ -458,6 +458,20 @@ Resources:
       RestApiId: !Ref HelpInApi
       ParentId: !Ref ServicesResource
       PathPart: '{id}'
+      
+  JobsResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref HelpInApi
+      ParentId: !GetAtt HelpInApi.RootResourceId
+      PathPart: jobs
+
+  JobIdResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref HelpInApi
+      ParentId: !Ref JobsResource
+      PathPart: '{id}'
 
   RecommendationsResource:
     Type: AWS::ApiGateway::Resource
@@ -483,6 +497,32 @@ Resources:
     Properties:
       RestApiId: !Ref HelpInApi
       ResourceId: !Ref ServiceIdResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.id: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SearchFunction.Arn}/invocations'
+
+  JobsGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref HelpInApi
+      ResourceId: !Ref JobsResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SearchFunction.Arn}/invocations'
+
+  JobIdGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref HelpInApi
+      ResourceId: !Ref JobIdResource
       HttpMethod: GET
       AuthorizationType: NONE
       RequestParameters:
@@ -595,6 +635,54 @@ Resources:
             method.response.header.Access-Control-Allow-Methods: true
             method.response.header.Access-Control-Allow-Origin: true
 
+  JobsOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref HelpInApi
+      ResourceId: !Ref JobsResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        IntegrationResponses:
+          - StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: !Sub "'${CorsAllowedOrigin}'"
+      MethodResponses:
+        - StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  JobIdOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref HelpInApi
+      ResourceId: !Ref JobIdResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        IntegrationResponses:
+          - StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: !Sub "'${CorsAllowedOrigin}'"
+      MethodResponses:
+        - StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
   RecommendationsOptionsMethod:
     Type: AWS::ApiGateway::Method
     Properties:
@@ -666,12 +754,16 @@ Resources:
     DependsOn:
       - ServicesGetMethod
       - ServiceIdGetMethod
+      - JobsGetMethod
+      - JobIdGetMethod
       - ServicesPostMethod
       - ServiceIdPutMethod
       - ServiceIdDeleteMethod
       - RecommendationsGetMethod
       - ServicesOptionsMethod
       - ServiceIdOptionsMethod
+      - JobsOptionsMethod
+      - JobIdOptionsMethod
       - RecommendationsOptionsMethod
     Properties:
       RestApiId: !Ref HelpInApi
