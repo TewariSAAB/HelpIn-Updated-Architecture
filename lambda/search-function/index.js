@@ -21,6 +21,17 @@ async function getDatabaseCredentials() {
   return JSON.parse(response.SecretString);
 }
 
+function response(statusCode, body, origin) {
+  return {
+    statusCode,
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": origin
+    },
+    body: JSON.stringify(body)
+  };
+}
+
 exports.handler = async (event) => {
   const origin = process.env.CORS_ALLOWED_ORIGIN || "*";
   let connection;
@@ -39,128 +50,222 @@ exports.handler = async (event) => {
       connectTimeout: 10000
     });
 
-    const serviceId = event.pathParameters?.id;
+    console.log("Connected to HelpIn RDS.");
+
+    const path = event.path || "";
+    const resource = event.resource || "";
+    const id = event.pathParameters?.id;
     const query = event.queryStringParameters || {};
 
-    let sql = `
-      SELECT
-        id,
-        name,
-        category,
-        location,
-        description,
-        price,
-        cost_type,
-        service_type,
-        contact_number,
-        website_url,
-        opening_hours,
-        image_url,
-        status,
-        created_at,
-        updated_at
-      FROM services
-      WHERE status = 'Active'
-    `;
+    // =========================================================
+    // JOBS
+    // =========================================================
 
-    const values = [];
+    if (path.startsWith("/jobs") || resource.startsWith("/jobs")) {
+      let sql = `
+        SELECT
+          id,
+          title,
+          company,
+          category,
+          job_type,
+          location,
+          pay,
+          description,
+          experience_requirement,
+          external_url,
+          image_url,
+          status,
+          created_at,
+          updated_at
+        FROM jobs
+        WHERE status = 'Active'
+      `;
 
-    // GET /services/{id}
-    if (serviceId) {
-      sql += " AND id = ?";
-      values.push(serviceId);
-    }
+      const values = [];
 
-    // GET /services?category=Food Support
-    if (query.category) {
-      sql += " AND category = ?";
-      values.push(query.category);
-    }
-
-    // GET /services?location=London
-    if (query.location) {
-      sql += " AND LOWER(location) = LOWER(?)";
-      values.push(query.location);
-    }
-
-    // GET /services?serviceType=Food Bank
-    if (query.serviceType) {
-      sql += " AND LOWER(service_type) = LOWER(?)";
-      values.push(query.serviceType);
-    }
-
-    // GET /services?maxPrice=500
-    if (query.maxPrice) {
-      const maxPrice = Number(query.maxPrice);
-
-      if (!Number.isNaN(maxPrice)) {
-        sql += " AND price <= ?";
-        values.push(maxPrice);
+      // GET /jobs/{id}
+      if (id) {
+        sql += " AND id = ?";
+        values.push(id);
       }
-    }
 
-    sql += " ORDER BY created_at DESC";
+      // GET /jobs?location=Birmingham
+      if (query.location) {
+        sql += " AND LOWER(location) = LOWER(?)";
+        values.push(query.location);
+      }
 
-    const [results] = await connection.execute(sql, values);
+      // GET /jobs?category=Retail
+      if (query.category) {
+        sql += " AND LOWER(category) = LOWER(?)";
+        values.push(query.category);
+      }
 
-    if (serviceId && results.length === 0) {
-      return {
-        statusCode: 404,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": origin
+      // GET /jobs?jobType=Part-time
+      if (query.jobType) {
+        sql += " AND LOWER(job_type) = LOWER(?)";
+        values.push(query.jobType);
+      }
+
+      sql += " ORDER BY created_at DESC";
+
+      const [jobs] = await connection.execute(sql, values);
+
+      if (id && jobs.length === 0) {
+        return response(
+          404,
+          {
+            message: "Job not found"
+          },
+          origin
+        );
+      }
+
+      if (id) {
+        return response(
+          200,
+          {
+            job: jobs[0]
+          },
+          origin
+        );
+      }
+
+      return response(
+        200,
+        {
+          count: jobs.length,
+          jobs
         },
-        body: JSON.stringify({
-          message: "Service not found"
-        })
-      };
+        origin
+      );
     }
 
-    // Single service request
-    if (serviceId) {
-      return {
-        statusCode: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": origin
+    // =========================================================
+    // SERVICES
+    // =========================================================
+
+    if (
+      path.startsWith("/services") ||
+      resource.startsWith("/services")
+    ) {
+      let sql = `
+        SELECT
+          id,
+          name,
+          category,
+          location,
+          description,
+          price,
+          cost_type,
+          service_type,
+          contact_number,
+          website_url,
+          opening_hours,
+          image_url,
+          status,
+          created_at,
+          updated_at
+        FROM services
+        WHERE status = 'Active'
+      `;
+
+      const values = [];
+
+      // GET /services/{id}
+      if (id) {
+        sql += " AND id = ?";
+        values.push(id);
+      }
+
+      // GET /services?category=Food Support
+      if (query.category) {
+        sql += " AND LOWER(category) = LOWER(?)";
+        values.push(query.category);
+      }
+
+      // GET /services?location=London
+      if (query.location) {
+        sql += " AND LOWER(location) = LOWER(?)";
+        values.push(query.location);
+      }
+
+      // GET /services?serviceType=Food Bank
+      if (query.serviceType) {
+        sql += " AND LOWER(service_type) = LOWER(?)";
+        values.push(query.serviceType);
+      }
+
+      // GET /services?maxPrice=500
+      if (query.maxPrice) {
+        const maxPrice = Number(query.maxPrice);
+
+        if (!Number.isNaN(maxPrice)) {
+          sql += " AND price <= ?";
+          values.push(maxPrice);
+        }
+      }
+
+      sql += " ORDER BY created_at DESC";
+
+      const [services] = await connection.execute(sql, values);
+
+      if (id && services.length === 0) {
+        return response(
+          404,
+          {
+            message: "Service not found"
+          },
+          origin
+        );
+      }
+
+      if (id) {
+        return response(
+          200,
+          {
+            service: services[0]
+          },
+          origin
+        );
+      }
+
+      return response(
+        200,
+        {
+          count: services.length,
+          services
         },
-        body: JSON.stringify({
-          service: results[0]
-        })
-      };
+        origin
+      );
     }
 
-    // Multiple services request
-    return {
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": origin
+    // Unknown API path
+    return response(
+      404,
+      {
+        message: "Route not found"
       },
-      body: JSON.stringify({
-        count: results.length,
-        services: results
-      })
-    };
+      origin
+    );
 
   } catch (error) {
     console.error("SearchFunction error:", error);
 
-    return {
-      statusCode: 500,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": origin
-      },
-      body: JSON.stringify({
-        message: "Unable to retrieve services",
+    return response(
+      500,
+      {
+        message: "Unable to retrieve HelpIn data",
         error: error.message
-      })
-    };
+      },
+      origin
+    );
 
   } finally {
     if (connection) {
       await connection.end();
+      console.log("Database connection closed.");
     }
   }
 };
