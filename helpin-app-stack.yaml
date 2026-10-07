@@ -170,7 +170,7 @@ Resources:
     DependsOn: HelpInEventQueuePolicy
     Properties:
       Name: !Sub '${ProjectName}-service-events'
-      Description: Routes HelpIn service-management events to SQS for background processing
+      Description: Routes HelpIn admin-management events to SQS for background processing
       EventBusName: !Ref HelpInEventBus
       State: ENABLED
       EventPattern:
@@ -180,6 +180,9 @@ Resources:
           - ServiceCreated
           - ServiceUpdated
           - ServiceDeleted
+          - JobCreated
+          - JobUpdated
+          - JobDeleted
       Targets:
         - Id: HelpInEventQueueTarget
           Arn: !GetAtt HelpInEventQueue.Arn
