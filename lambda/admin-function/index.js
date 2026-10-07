@@ -5,7 +5,21 @@ const {
   GetSecretValueCommand
 } = require("@aws-sdk/client-secrets-manager");
 
+const {
+  EventBridgeClient,
+  PutEventsCommand
+} = require("@aws-sdk/client-eventbridge");
+
+
 const secretsClient = new SecretsManagerClient({});
+const eventBridgeClient = new EventBridgeClient({});
+
+
+/*
+============================================================
+Database
+============================================================
+*/
 
 async function getDatabaseCredentials() {
   const response = await secretsClient.send(
@@ -14,180 +28,313 @@ async function getDatabaseCredentials() {
     })
   );
 
-  if (!response.SecretString) {
-    throw new Error("Database secret does not contain SecretString");
-  }
-
   return JSON.parse(response.SecretString);
 }
 
-function createResponse(statusCode, body, origin) {
+
+async function getDatabaseConnection() {
+  const credentials = await getDatabaseCredentials();
+
+  return mysql.createConnection({
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT),
+    database: process.env.DB_NAME,
+    user: credentials.username,
+    password: credentials.password
+  });
+}
+
+
+/*
+============================================================
+Admin Authorization
+============================================================
+*/
+
+function isAdmin(event) {
+  const requiredGroup =
+    process.env.REQUIRED_ADMIN_GROUP || "Admin";
+
+  const groupsClaim =
+    event?.requestContext?.authorizer?.claims?.["cognito:groups"];
+
+  if (!groupsClaim) {
+    return false;
+  }
+
+  let groups = [];
+
+  try {
+    if (groupsClaim.startsWith("[")) {
+      groups = JSON.parse(groupsClaim);
+    } else {
+      groups = groupsClaim
+        .replace(/^\[/, "")
+        .replace(/\]$/, "")
+        .split(",")
+        .map(group => group.trim());
+    }
+  } catch {
+    groups = groupsClaim
+      .replace(/^\[/, "")
+      .replace(/\]$/, "")
+      .split(",")
+      .map(group => group.trim());
+  }
+
+  return groups.includes(requiredGroup);
+}
+
+
+/*
+============================================================
+EventBridge
+============================================================
+*/
+
+async function publishEvent(detailType, detail) {
+  try {
+    const command = new PutEventsCommand({
+      Entries: [
+        {
+          EventBusName: process.env.EVENT_BUS_NAME,
+
+          Source: "helpin.application",
+
+          DetailType: detailType,
+
+          Detail: JSON.stringify({
+            ...detail,
+            timestamp: new Date().toISOString()
+          })
+        }
+      ]
+    });
+
+    const response =
+      await eventBridgeClient.send(command);
+
+    console.log(
+      "EventBridge event published:",
+      detailType,
+      JSON.stringify(response)
+    );
+
+  } catch (error) {
+    /*
+      Do not fail the database operation just because
+      asynchronous event logging failed.
+    */
+    console.error(
+      "Failed to publish EventBridge event:",
+      detailType,
+      error
+    );
+  }
+}
+
+
+/*
+============================================================
+Response Helper
+============================================================
+*/
+
+function response(statusCode, body) {
   return {
     statusCode,
+
     headers: {
       "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": origin
+      "Access-Control-Allow-Origin":
+        process.env.CORS_ALLOWED_ORIGIN || "*"
     },
+
     body: JSON.stringify(body)
   };
 }
 
-function isAdmin(event) {
-  const groups =
-    event?.requestContext?.authorizer?.claims?.["cognito:groups"] || "";
 
-  const requiredGroup =
-    process.env.REQUIRED_ADMIN_GROUP || "Admin";
-
-  const groupList = groups
-    .split(",")
-    .map(group => group.trim())
-    .filter(Boolean);
-
-  return groupList.includes(requiredGroup);
-}
-
-function parseBody(event) {
-  if (!event.body) {
-    return {};
-  }
-
-  if (typeof event.body === "object") {
-    return event.body;
-  }
-
-  return JSON.parse(event.body);
-}
+/*
+============================================================
+Main Lambda Handler
+============================================================
+*/
 
 exports.handler = async (event) => {
-  const origin = process.env.CORS_ALLOWED_ORIGIN || "*";
+
+  console.log(
+    "Admin request:",
+    JSON.stringify(event, null, 2)
+  );
+
+  /*
+  ----------------------------------------------------------
+  Check Cognito Admin group
+  ----------------------------------------------------------
+  */
+
+  if (!isAdmin(event)) {
+    return response(403, {
+      message: "Admin access is required"
+    });
+  }
+
+
   let connection;
 
   try {
-    console.log("Admin request:", JSON.stringify(event));
 
-    // ---------------------------------------------------------
-    // CHECK COGNITO ADMIN GROUP
-    // ---------------------------------------------------------
+    connection =
+      await getDatabaseConnection();
 
-    if (!isAdmin(event)) {
-      return createResponse(
-        403,
-        {
-          message: "Admin access is required"
-        },
-        origin
-      );
-    }
 
-    // ---------------------------------------------------------
-    // CONNECT TO RDS
-    // ---------------------------------------------------------
+    const method =
+      event.httpMethod;
 
-    const credentials = await getDatabaseCredentials();
+    const path =
+      event.resource || event.path || "";
 
-    connection = await mysql.createConnection({
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT || 3306),
-      user: credentials.username,
-      password: credentials.password,
-      database: process.env.DB_NAME,
-      connectTimeout: 10000
-    });
+    const id =
+      event.pathParameters?.id;
 
-    console.log("AdminFunction connected to RDS.");
+    const body =
+      event.body
+        ? JSON.parse(event.body)
+        : {};
 
-    const method = event.httpMethod;
-    const path = event.path || "";
-    const resource = event.resource || "";
-    const id = event.pathParameters?.id;
 
-    const body = parseBody(event);
+    /*
+    ========================================================
+    SERVICES
+    ========================================================
+    */
 
-    // =========================================================
-    // SERVICES
-    // =========================================================
+    if (path.includes("/services")) {
 
-    if (
-      path.startsWith("/services") ||
-      resource.startsWith("/services")
-    ) {
+      /*
+      ------------------------------------------------------
+      CREATE SERVICE
+      POST /services
+      ------------------------------------------------------
+      */
 
-      // -------------------------------------------------------
-      // POST /services
-      // -------------------------------------------------------
+      if (
+        method === "POST" &&
+        !id
+      ) {
 
-      if (method === "POST") {
-        if (!body.name || !body.category || !body.location) {
-          return createResponse(
-            400,
-            {
-              message:
-                "name, category and location are required"
-            },
-            origin
-          );
+        const {
+          name,
+          category,
+          location,
+          description,
+          price,
+          cost_type,
+          service_type,
+          contact_number,
+          website_url,
+          opening_hours,
+          image_url,
+          status
+        } = body;
+
+
+        if (
+          !name ||
+          !category ||
+          !location
+        ) {
+          return response(400, {
+            message:
+              "name, category and location are required"
+          });
         }
 
-        const sql = `
-          INSERT INTO services
-          (
-            name,
-            category,
-            location,
-            description,
-            price,
-            cost_type,
-            service_type,
-            contact_number,
-            website_url,
-            opening_hours,
-            image_url,
-            status
-          )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
 
-        const values = [
-          body.name,
-          body.category,
-          body.location,
-          body.description || null,
-          body.price ?? null,
-          body.cost_type || null,
-          body.service_type || null,
-          body.contact_number || null,
-          body.website_url || null,
-          body.opening_hours || null,
-          body.image_url || null,
-          body.status || "Active"
-        ];
+        const [result] =
+          await connection.execute(
+            `
+            INSERT INTO services
+            (
+              name,
+              category,
+              location,
+              description,
+              price,
+              cost_type,
+              service_type,
+              contact_number,
+              website_url,
+              opening_hours,
+              image_url,
+              status
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `,
+            [
+              name,
+              category,
+              location,
+              description || null,
+              price ?? null,
+              cost_type || null,
+              service_type || null,
+              contact_number || null,
+              website_url || null,
+              opening_hours || null,
+              image_url || null,
+              status || "Active"
+            ]
+          );
 
-        const [result] = await connection.execute(
-          sql,
-          values
-        );
 
-        const [createdRows] = await connection.execute(
-          "SELECT * FROM services WHERE id = ?",
-          [result.insertId]
-        );
+        const serviceId =
+          result.insertId;
 
-        return createResponse(
-          201,
+
+        const [[service]] =
+          await connection.execute(
+            `
+            SELECT *
+            FROM services
+            WHERE id = ?
+            `,
+            [serviceId]
+          );
+
+
+        await publishEvent(
+          "ServiceCreated",
           {
-            message: "Service created successfully",
-            service: createdRows[0]
-          },
-          origin
+            serviceId,
+            name: service.name,
+            action: "CREATE"
+          }
         );
+
+
+        return response(201, {
+          message:
+            "Service created successfully",
+
+          service
+        });
       }
 
-      // -------------------------------------------------------
-      // PUT /services/{id}
-      // -------------------------------------------------------
 
-      if (method === "PUT" && id) {
+      /*
+      ------------------------------------------------------
+      UPDATE SERVICE
+      PUT /services/{id}
+      ------------------------------------------------------
+      */
+
+      if (
+        method === "PUT" &&
+        id
+      ) {
+
         const allowedFields = [
           "name",
           "category",
@@ -203,186 +350,278 @@ exports.handler = async (event) => {
           "status"
         ];
 
+
         const updates = [];
         const values = [];
 
+
         for (const field of allowedFields) {
-          if (Object.prototype.hasOwnProperty.call(body, field)) {
-            updates.push(`${field} = ?`);
-            values.push(body[field]);
+
+          if (
+            body[field] !== undefined
+          ) {
+
+            updates.push(
+              `${field} = ?`
+            );
+
+            values.push(
+              body[field]
+            );
           }
         }
 
-        if (updates.length === 0) {
-          return createResponse(
-            400,
-            {
-              message: "No valid fields supplied for update"
-            },
-            origin
-          );
+
+        if (
+          updates.length === 0
+        ) {
+
+          return response(400, {
+            message:
+              "No valid fields supplied for update"
+          });
         }
+
 
         values.push(id);
 
-        const [result] = await connection.execute(
-          `
+
+        const [result] =
+          await connection.execute(
+            `
             UPDATE services
             SET ${updates.join(", ")}
             WHERE id = ?
-          `,
-          values
-        );
-
-        if (result.affectedRows === 0) {
-          return createResponse(
-            404,
-            {
-              message: "Service not found"
-            },
-            origin
+            `,
+            values
           );
+
+
+        if (
+          result.affectedRows === 0
+        ) {
+
+          return response(404, {
+            message:
+              "Service not found"
+          });
         }
 
-        const [updatedRows] = await connection.execute(
-          "SELECT * FROM services WHERE id = ?",
-          [id]
+
+        const [[service]] =
+          await connection.execute(
+            `
+            SELECT *
+            FROM services
+            WHERE id = ?
+            `,
+            [id]
+          );
+
+
+        await publishEvent(
+          "ServiceUpdated",
+          {
+            serviceId: Number(id),
+            name: service.name,
+            action: "UPDATE"
+          }
         );
 
-        return createResponse(
-          200,
-          {
-            message: "Service updated successfully",
-            service: updatedRows[0]
-          },
-          origin
-        );
+
+        return response(200, {
+          message:
+            "Service updated successfully",
+
+          service
+        });
       }
 
-      // -------------------------------------------------------
-      // DELETE /services/{id}
-      // Soft delete
-      // -------------------------------------------------------
 
-      if (method === "DELETE" && id) {
-        const [result] = await connection.execute(
-          `
+      /*
+      ------------------------------------------------------
+      DELETE SERVICE
+      DELETE /services/{id}
+      ------------------------------------------------------
+      */
+
+      if (
+        method === "DELETE" &&
+        id
+      ) {
+
+        const [result] =
+          await connection.execute(
+            `
             UPDATE services
             SET status = 'Inactive'
             WHERE id = ?
-          `,
-          [id]
-        );
-
-        if (result.affectedRows === 0) {
-          return createResponse(
-            404,
-            {
-              message: "Service not found"
-            },
-            origin
+            `,
+            [id]
           );
+
+
+        if (
+          result.affectedRows === 0
+        ) {
+
+          return response(404, {
+            message:
+              "Service not found"
+          });
         }
 
-        return createResponse(
-          200,
+
+        await publishEvent(
+          "ServiceDeleted",
           {
-            message: "Service deleted successfully",
-            id: Number(id)
-          },
-          origin
+            serviceId: Number(id),
+            action: "DELETE"
+          }
         );
+
+
+        return response(200, {
+          message:
+            "Service deleted successfully",
+
+          id: Number(id)
+        });
       }
     }
 
-    // =========================================================
-    // JOBS
-    // =========================================================
 
-    if (
-      path.startsWith("/jobs") ||
-      resource.startsWith("/jobs")
-    ) {
+    /*
+    ========================================================
+    JOBS
+    ========================================================
+    */
 
-      // -------------------------------------------------------
-      // POST /jobs
-      // -------------------------------------------------------
+    if (path.includes("/jobs")) {
 
-      if (method === "POST") {
+      /*
+      ------------------------------------------------------
+      CREATE JOB
+      POST /jobs
+      ------------------------------------------------------
+      */
+
+      if (
+        method === "POST" &&
+        !id
+      ) {
+
+        const {
+          title,
+          company,
+          category,
+          job_type,
+          location,
+          pay,
+          description,
+          experience_requirement,
+          external_url,
+          image_url,
+          status
+        } = body;
+
+
         if (
-          !body.title ||
-          !body.category ||
-          !body.job_type ||
-          !body.location ||
-          !body.external_url
+          !title ||
+          !category ||
+          !job_type ||
+          !location ||
+          !external_url
         ) {
-          return createResponse(
-            400,
-            {
-              message:
-                "title, category, job_type, location and external_url are required"
-            },
-            origin
-          );
+
+          return response(400, {
+            message:
+              "title, category, job_type, location and external_url are required"
+          });
         }
 
-        const sql = `
-          INSERT INTO jobs
-          (
-            title,
-            company,
-            category,
-            job_type,
-            location,
-            pay,
-            description,
-            experience_requirement,
-            external_url,
-            image_url,
-            status
-          )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
 
-        const values = [
-          body.title,
-          body.company || null,
-          body.category,
-          body.job_type,
-          body.location,
-          body.pay || null,
-          body.description || null,
-          body.experience_requirement || null,
-          body.external_url,
-          body.image_url || null,
-          body.status || "Active"
-        ];
+        const [result] =
+          await connection.execute(
+            `
+            INSERT INTO jobs
+            (
+              title,
+              company,
+              category,
+              job_type,
+              location,
+              pay,
+              description,
+              experience_requirement,
+              external_url,
+              image_url,
+              status
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `,
+            [
+              title,
+              company || null,
+              category,
+              job_type,
+              location,
+              pay || null,
+              description || null,
+              experience_requirement || null,
+              external_url,
+              image_url || null,
+              status || "Active"
+            ]
+          );
 
-        const [result] = await connection.execute(
-          sql,
-          values
-        );
 
-        const [createdRows] = await connection.execute(
-          "SELECT * FROM jobs WHERE id = ?",
-          [result.insertId]
-        );
+        const jobId =
+          result.insertId;
 
-        return createResponse(
-          201,
+
+        const [[job]] =
+          await connection.execute(
+            `
+            SELECT *
+            FROM jobs
+            WHERE id = ?
+            `,
+            [jobId]
+          );
+
+
+        await publishEvent(
+          "JobCreated",
           {
-            message: "Job created successfully",
-            job: createdRows[0]
-          },
-          origin
+            jobId,
+            title: job.title,
+            action: "CREATE"
+          }
         );
+
+
+        return response(201, {
+          message:
+            "Job created successfully",
+
+          job
+        });
       }
 
-      // -------------------------------------------------------
-      // PUT /jobs/{id}
-      // -------------------------------------------------------
 
-      if (method === "PUT" && id) {
+      /*
+      ------------------------------------------------------
+      UPDATE JOB
+      PUT /jobs/{id}
+      ------------------------------------------------------
+      */
+
+      if (
+        method === "PUT" &&
+        id
+      ) {
+
         const allowedFields = [
           "title",
           "company",
@@ -397,122 +636,177 @@ exports.handler = async (event) => {
           "status"
         ];
 
+
         const updates = [];
         const values = [];
 
+
         for (const field of allowedFields) {
-          if (Object.prototype.hasOwnProperty.call(body, field)) {
-            updates.push(`${field} = ?`);
-            values.push(body[field]);
+
+          if (
+            body[field] !== undefined
+          ) {
+
+            updates.push(
+              `${field} = ?`
+            );
+
+            values.push(
+              body[field]
+            );
           }
         }
 
-        if (updates.length === 0) {
-          return createResponse(
-            400,
-            {
-              message: "No valid fields supplied for update"
-            },
-            origin
-          );
+
+        if (
+          updates.length === 0
+        ) {
+
+          return response(400, {
+            message:
+              "No valid fields supplied for update"
+          });
         }
+
 
         values.push(id);
 
-        const [result] = await connection.execute(
-          `
+
+        const [result] =
+          await connection.execute(
+            `
             UPDATE jobs
             SET ${updates.join(", ")}
             WHERE id = ?
-          `,
-          values
-        );
-
-        if (result.affectedRows === 0) {
-          return createResponse(
-            404,
-            {
-              message: "Job not found"
-            },
-            origin
+            `,
+            values
           );
+
+
+        if (
+          result.affectedRows === 0
+        ) {
+
+          return response(404, {
+            message:
+              "Job not found"
+          });
         }
 
-        const [updatedRows] = await connection.execute(
-          "SELECT * FROM jobs WHERE id = ?",
-          [id]
+
+        const [[job]] =
+          await connection.execute(
+            `
+            SELECT *
+            FROM jobs
+            WHERE id = ?
+            `,
+            [id]
+          );
+
+
+        await publishEvent(
+          "JobUpdated",
+          {
+            jobId: Number(id),
+            title: job.title,
+            action: "UPDATE"
+          }
         );
 
-        return createResponse(
-          200,
-          {
-            message: "Job updated successfully",
-            job: updatedRows[0]
-          },
-          origin
-        );
+
+        return response(200, {
+          message:
+            "Job updated successfully",
+
+          job
+        });
       }
 
-      // -------------------------------------------------------
-      // DELETE /jobs/{id}
-      // Soft delete
-      // -------------------------------------------------------
 
-      if (method === "DELETE" && id) {
-        const [result] = await connection.execute(
-          `
+      /*
+      ------------------------------------------------------
+      DELETE JOB
+      DELETE /jobs/{id}
+      ------------------------------------------------------
+      */
+
+      if (
+        method === "DELETE" &&
+        id
+      ) {
+
+        const [result] =
+          await connection.execute(
+            `
             UPDATE jobs
             SET status = 'Inactive'
             WHERE id = ?
-          `,
-          [id]
-        );
-
-        if (result.affectedRows === 0) {
-          return createResponse(
-            404,
-            {
-              message: "Job not found"
-            },
-            origin
+            `,
+            [id]
           );
+
+
+        if (
+          result.affectedRows === 0
+        ) {
+
+          return response(404, {
+            message:
+              "Job not found"
+          });
         }
 
-        return createResponse(
-          200,
+
+        await publishEvent(
+          "JobDeleted",
           {
-            message: "Job deleted successfully",
-            id: Number(id)
-          },
-          origin
+            jobId: Number(id),
+            action: "DELETE"
+          }
         );
+
+
+        return response(200, {
+          message:
+            "Job deleted successfully",
+
+          id: Number(id)
+        });
       }
     }
 
-    return createResponse(
-      405,
-      {
-        message: "Method or route not supported"
-      },
-      origin
-    );
+
+    /*
+    ----------------------------------------------------------
+    Unsupported request
+    ----------------------------------------------------------
+    */
+
+    return response(405, {
+      message:
+        "Unsupported admin route or method"
+    });
+
 
   } catch (error) {
-    console.error("AdminFunction error:", error);
 
-    return createResponse(
-      500,
-      {
-        message: "Admin operation failed",
-        error: error.message
-      },
-      origin
+    console.error(
+      "Admin function error:",
+      error
     );
 
+
+    return response(500, {
+      message:
+        "Internal server error"
+    });
+
+
   } finally {
+
     if (connection) {
       await connection.end();
-      console.log("Database connection closed.");
     }
   }
 };
