@@ -5,12 +5,9 @@ const {
   GetSecretValueCommand
 } = require("@aws-sdk/client-secrets-manager");
 
-
 const secretsClient = new SecretsManagerClient({});
 
-
 async function getDatabaseCredentials() {
-
   const response = await secretsClient.send(
     new GetSecretValueCommand({
       SecretId: process.env.DB_SECRET_ARN
@@ -20,9 +17,7 @@ async function getDatabaseCredentials() {
   return JSON.parse(response.SecretString);
 }
 
-
 async function getDatabaseConnection() {
-
   const credentials = await getDatabaseCredentials();
 
   return mysql.createConnection({
@@ -34,9 +29,7 @@ async function getDatabaseConnection() {
   });
 }
 
-
 function addServiceScore(service, filters) {
-
   let score = 0;
 
   if (
@@ -71,9 +64,7 @@ function addServiceScore(service, filters) {
   return score;
 }
 
-
 function addJobScore(job, filters) {
-
   let score = 0;
 
   if (
@@ -84,8 +75,8 @@ function addJobScore(job, filters) {
   }
 
   if (
-    filters.category &&
-    job.category.toLowerCase() === filters.category.toLowerCase()
+    filters.jobCategory &&
+    job.category.toLowerCase() === filters.jobCategory.toLowerCase()
   ) {
     score += 2;
   }
@@ -101,17 +92,76 @@ function addJobScore(job, filters) {
   return score;
 }
 
+function matchesServiceFilters(service, filters) {
+  if (
+    filters.location &&
+    service.location.toLowerCase() !== filters.location.toLowerCase()
+  ) {
+    return false;
+  }
+
+  if (
+    filters.category &&
+    service.category.toLowerCase() !== filters.category.toLowerCase()
+  ) {
+    return false;
+  }
+
+  if (
+    filters.serviceType &&
+    (
+      !service.service_type ||
+      service.service_type.toLowerCase() !== filters.serviceType.toLowerCase()
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    filters.maxPrice &&
+    Number(service.price) > Number(filters.maxPrice)
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+function matchesJobFilters(job, filters) {
+  if (
+    filters.location &&
+    job.location.toLowerCase() !== filters.location.toLowerCase()
+  ) {
+    return false;
+  }
+
+  if (
+    filters.jobCategory &&
+    job.category.toLowerCase() !== filters.jobCategory.toLowerCase()
+  ) {
+    return false;
+  }
+
+  if (
+    filters.jobType &&
+    (
+      !job.job_type ||
+      job.job_type.toLowerCase() !== filters.jobType.toLowerCase()
+    )
+  ) {
+    return false;
+  }
+
+  return true;
+}
 
 exports.handler = async (event) => {
-
   let connection;
 
   try {
-
     const filters = event.queryStringParameters || {};
 
     connection = await getDatabaseConnection();
-
 
     const [services] = await connection.execute(
       `SELECT *
@@ -119,53 +169,45 @@ exports.handler = async (event) => {
        WHERE status = 'Active'`
     );
 
-
     const [jobs] = await connection.execute(
       `SELECT *
        FROM jobs
        WHERE status = 'Active'`
     );
 
-
     const recommendedServices = services
+      .filter(service =>
+        matchesServiceFilters(service, filters)
+      )
       .map(service => ({
         ...service,
         recommendationScore: addServiceScore(service, filters)
       }))
-      .filter(service =>
-        Object.keys(filters).length === 0 ||
-        service.recommendationScore > 0
-      )
       .sort(
         (a, b) =>
           b.recommendationScore - a.recommendationScore
       );
 
-
     const recommendedJobs = jobs
+      .filter(job =>
+        matchesJobFilters(job, filters)
+      )
       .map(job => ({
         ...job,
         recommendationScore: addJobScore(job, filters)
       }))
-      .filter(job =>
-        Object.keys(filters).length === 0 ||
-        job.recommendationScore > 0
-      )
       .sort(
         (a, b) =>
           b.recommendationScore - a.recommendationScore
       );
 
-
     return {
       statusCode: 200,
-
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin":
           process.env.CORS_ALLOWED_ORIGIN || "*"
       },
-
       body: JSON.stringify({
         filtersUsed: filters,
         services: recommendedServices,
@@ -173,28 +215,22 @@ exports.handler = async (event) => {
       })
     };
 
-
   } catch (error) {
-
     console.error("Recommendation error:", error);
 
     return {
       statusCode: 500,
-
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin":
           process.env.CORS_ALLOWED_ORIGIN || "*"
       },
-
       body: JSON.stringify({
         message: "Unable to generate recommendations"
       })
     };
 
-
   } finally {
-
     if (connection) {
       await connection.end();
     }
