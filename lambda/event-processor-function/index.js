@@ -52,15 +52,10 @@ function apiResponse(
 
 
 /* ======================================================
-   CHECK ADMIN GROUP
+   ADMIN GROUP CHECK
 ====================================================== */
 
 function isAdmin(event) {
-  /*
-    API Gateway Cognito User Pool authorizer
-    makes token claims available here.
-  */
-
   const claims =
     event?.requestContext
       ?.authorizer
@@ -130,7 +125,69 @@ function isAdmin(event) {
 
 
 /* ======================================================
-   NORMALISE EVENTBRIDGE EVENT
+   SAFE REQUEST LOGGING
+
+   IMPORTANT:
+   Do not log Authorization headers / Cognito JWTs.
+====================================================== */
+
+function logEventSummary(event) {
+  if (
+    Array.isArray(
+      event?.Records
+    )
+  ) {
+    console.log(
+      "Event received:",
+      {
+        type: "SQS",
+        recordCount:
+          event.Records.length,
+        eventSource:
+          event.Records[0]
+            ?.eventSource ||
+          "unknown",
+      }
+    );
+
+    return;
+  }
+
+
+  if (
+    event?.httpMethod
+  ) {
+    console.log(
+      "Event received:",
+      {
+        type:
+          "API Gateway",
+
+        method:
+          event.httpMethod,
+
+        path:
+          event.path ||
+          event.resource ||
+          "unknown",
+      }
+    );
+
+    return;
+  }
+
+
+  console.log(
+    "Event received:",
+    {
+      type: "Unknown",
+    }
+  );
+}
+
+
+/* ======================================================
+   BUILD HELPIN EVENT LOG
 ====================================================== */
 
 function buildEventLog(
@@ -185,6 +242,10 @@ function buildEventLog(
   const entityName =
     detail.name ??
     detail.title ??
+    detail.serviceName ??
+    detail.service_name ??
+    detail.jobTitle ??
+    detail.job_title ??
     detail.entityName ??
     detail.entity_name ??
     null;
@@ -225,7 +286,7 @@ function buildEventLog(
 
 
 /* ======================================================
-   PROCESS SQS RECORDS
+   PROCESS SQS EVENTS
 ====================================================== */
 
 async function processSqsEvent(
@@ -252,14 +313,6 @@ async function processSqsEvent(
         );
 
 
-      console.log(
-        "EventBridge event:",
-        JSON.stringify(
-          eventBridgeEvent
-        )
-      );
-
-
       const eventLog =
         buildEventLog(
           eventBridgeEvent
@@ -267,10 +320,8 @@ async function processSqsEvent(
 
 
       /*
-        This marker is intentionally unique.
-
-        Later GET /admin/logs searches CloudWatch
-        only for messages beginning with this marker.
+        This is the marker searched by
+        GET /admin/logs.
       */
 
       console.log(
@@ -307,10 +358,10 @@ async function processSqsEvent(
 
 
 /* ======================================================
-   PARSE CLOUDWATCH LOG ENTRY
+   PARSE CLOUDWATCH EVENT
 ====================================================== */
 
-function parseEventLog(
+function parseCloudWatchEvent(
   cloudWatchEvent
 ) {
   const message =
@@ -335,11 +386,62 @@ function parseEventLog(
   }
 
 
+  const afterMarker =
+    message.slice(
+      markerPosition +
+        marker.length
+    );
+
+
+  /*
+    Lambda CloudWatch messages may contain
+    formatting around the console output.
+
+    Find the JSON object beginning after
+    HELPIN_EVENT_LOG.
+  */
+
+  const firstBrace =
+    afterMarker.indexOf(
+      "{"
+    );
+
+
+  if (
+    firstBrace === -1
+  ) {
+    return null;
+  }
+
+
+  const jsonStart =
+    afterMarker.slice(
+      firstBrace
+    );
+
+
+  /*
+    Find the final closing brace.
+  */
+
+  const lastBrace =
+    jsonStart.lastIndexOf(
+      "}"
+    );
+
+
+  if (
+    lastBrace === -1
+  ) {
+    return null;
+  }
+
+
   const jsonText =
-    message
+    jsonStart
       .slice(
-        markerPosition +
-          marker.length
+        0,
+        lastBrace + 1
       )
       .trim();
 
@@ -365,9 +467,10 @@ function parseEventLog(
 
   } catch (error) {
     console.error(
-      "Unable to parse HelpIn event log:",
-      error
+      "Unable to parse HelpIn CloudWatch event:",
+      error.message
     );
+
 
     return null;
   }
@@ -376,6 +479,13 @@ function parseEventLog(
 
 /* ======================================================
    READ REAL EVENT LOGS FROM CLOUDWATCH
+
+   IMPORTANT:
+   FilterLogEvents is paginated.
+
+   CloudWatch can return an empty page while
+   still providing nextToken, therefore every
+   page must be followed.
 ====================================================== */
 
 async function getEventLogs() {
@@ -397,61 +507,179 @@ async function getEventLogs() {
       1000;
 
 
-  const command =
-    new FilterLogEventsCommand({
-      logGroupName:
-        EVENT_LOG_GROUP_NAME,
-
-      startTime:
-        thirtyDaysAgo,
-
-      filterPattern:
-        '"HELPIN_EVENT_LOG"',
-
-      limit:
-        100,
-    });
+  let nextToken =
+    undefined;
 
 
-  const result =
-    await logsClient.send(
-      command
-    );
+  let previousToken =
+    null;
 
 
-  const logs =
-    (result.events || [])
-      .map(
-        parseEventLog
-      )
-      .filter(Boolean)
-      .sort(
-        (a, b) => {
-          const aTime =
-            new Date(
-              a.timestamp ||
-              a.cloudWatchTimestamp ||
-              0
-            ).getTime();
+  let pageCount =
+    0;
 
 
-          const bTime =
-            new Date(
-              b.timestamp ||
-              b.cloudWatchTimestamp ||
-              0
-            ).getTime();
+  const rawEvents =
+    [];
 
 
-          return (
-            bTime -
-            aTime
-          );
-        }
+  do {
+    const command =
+      new FilterLogEventsCommand({
+        logGroupName:
+          EVENT_LOG_GROUP_NAME,
+
+        startTime:
+          thirtyDaysAgo,
+
+        filterPattern:
+          '"HELPIN_EVENT_LOG"',
+
+        limit:
+          100,
+
+        nextToken,
+      });
+
+
+    const result =
+      await logsClient.send(
+        command
       );
 
 
-  return logs;
+    pageCount += 1;
+
+
+    if (
+      Array.isArray(
+        result.events
+      )
+    ) {
+      rawEvents.push(
+        ...result.events
+      );
+    }
+
+
+    previousToken =
+      nextToken || null;
+
+
+    nextToken =
+      result.nextToken;
+
+
+    /*
+      AWS can occasionally return the
+      same token again.
+
+      Prevent an infinite loop.
+    */
+
+    if (
+      nextToken &&
+      previousToken &&
+      nextToken ===
+        previousToken
+    ) {
+      break;
+    }
+
+
+    /*
+      Safety limit.
+
+      More than enough for this project.
+    */
+
+    if (
+      pageCount >= 50
+    ) {
+      console.warn(
+        "CloudWatch pagination stopped after 50 pages."
+      );
+
+      break;
+    }
+
+  } while (
+    nextToken
+  );
+
+
+  const parsedLogs =
+    rawEvents
+      .map(
+        parseCloudWatchEvent
+      )
+      .filter(Boolean);
+
+
+  /*
+    Remove duplicates using EventBridge event ID.
+  */
+
+  const uniqueLogs =
+    Array.from(
+      new Map(
+        parsedLogs.map(
+          (log) => [
+            log.eventId ||
+              log.cloudWatchEventId,
+            log,
+          ]
+        )
+      ).values()
+    );
+
+
+  uniqueLogs.sort(
+    (a, b) => {
+
+      const aTime =
+        new Date(
+          a.timestamp ||
+          a.cloudWatchTimestamp ||
+          0
+        ).getTime();
+
+
+      const bTime =
+        new Date(
+          b.timestamp ||
+          b.cloudWatchTimestamp ||
+          0
+        ).getTime();
+
+
+      return (
+        bTime -
+        aTime
+      );
+    }
+  );
+
+
+  console.log(
+    "CloudWatch event-log search:",
+    {
+      logGroupName:
+        EVENT_LOG_GROUP_NAME,
+
+      pages:
+        pageCount,
+
+      rawMatches:
+        rawEvents.length,
+
+      parsedMatches:
+        uniqueLogs.length,
+    }
+  );
+
+
+  return uniqueLogs;
 }
 
 
@@ -466,7 +694,9 @@ async function processApiRequest(
     event.httpMethod;
 
 
-  /* OPTIONS */
+  /* ====================================================
+     OPTIONS
+  ==================================================== */
 
   if (
     method === "OPTIONS"
@@ -474,13 +704,16 @@ async function processApiRequest(
     return apiResponse(
       200,
       {
-        message: "OK",
+        message:
+          "OK",
       }
     );
   }
 
 
-  /* ADMIN CHECK */
+  /* ====================================================
+     ADMIN AUTHORIZATION
+  ==================================================== */
 
   if (
     !isAdmin(event)
@@ -495,7 +728,9 @@ async function processApiRequest(
   }
 
 
-  /* GET /admin/logs */
+  /* ====================================================
+     GET /admin/logs
+  ==================================================== */
 
   if (
     method === "GET"
@@ -553,17 +788,20 @@ async function processApiRequest(
 exports.handler =
   async (event) => {
 
-    console.log(
-      "Event received:",
-      JSON.stringify(
-        event
-      )
+    /*
+      Do NOT JSON.stringify the entire
+      API Gateway event because it contains
+      the Cognito Authorization token.
+    */
+
+    logEventSummary(
+      event
     );
 
 
-    /* ================================================
-       SQS EVENT
-    ================================================ */
+    /* ==================================================
+       SQS
+    ================================================== */
 
     if (
       Array.isArray(
@@ -581,9 +819,9 @@ exports.handler =
     }
 
 
-    /* ================================================
-       API GATEWAY EVENT
-    ================================================ */
+    /* ==================================================
+       API GATEWAY
+    ================================================== */
 
     if (
       event?.httpMethod
