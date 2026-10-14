@@ -725,28 +725,13 @@ Resources:
   # SQS -> Event Processor Lambda
   ############################################################
 
-  HelpInEventQueueMapping:
-    Type: AWS::Lambda::EventSourceMapping
-
-    Properties:
-
-      EventSourceArn:
-        !GetAtt HelpInEventQueue.Arn
-
-      FunctionName:
-        !Ref EventProcessorFunction
-
-      Enabled:
-        true
-
-      BatchSize:
-        10
-
-      MaximumBatchingWindowInSeconds:
-        5
-
-      FunctionResponseTypes:
-        - ReportBatchItemFailures
+ HelpInEventQueueMapping:
+  Type: AWS::Lambda::EventSourceMapping
+  Properties:
+    EventSourceArn: !GetAtt HelpInEventQueue.Arn
+    FunctionName: !Ref EventProcessorFunction
+    Enabled: true
+    BatchSize: 10
 
       ScalingConfig:
         MaximumConcurrency: 2
