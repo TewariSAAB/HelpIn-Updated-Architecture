@@ -1,0 +1,56 @@
+.helpin-logo {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 9px;
+
+  color: #071e59;
+
+  text-decoration: none;
+
+  flex-shrink: 0;
+}
+
+
+.helpin-logo-icon {
+  width: 42px;
+  height: 42px;
+
+  display: block;
+
+  flex-shrink: 0;
+}
+
+
+.helpin-logo-text {
+  color: #071e59;
+
+  font-size: 27px;
+  font-weight: 800;
+
+  line-height: 1;
+
+  letter-spacing: -0.5px;
+}
+
+
+/* MOBILE */
+
+@media (max-width: 600px) {
+
+  .helpin-logo {
+    gap: 7px;
+  }
+
+
+  .helpin-logo-icon {
+    width: 37px;
+    height: 37px;
+  }
+
+
+  .helpin-logo-text {
+    font-size: 24px;
+  }
+
+}

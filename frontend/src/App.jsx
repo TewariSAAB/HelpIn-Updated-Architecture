@@ -1,0 +1,261 @@
+import {
+  Routes,
+  Route,
+} from "react-router-dom";
+
+
+/* ======================================================
+   PUBLIC PAGES
+====================================================== */
+
+import Home
+  from "./pages/Home.jsx";
+
+import Accommodation
+  from "./pages/Accommodation.jsx";
+
+import FoodSupport
+  from "./pages/FoodSupport.jsx";
+
+import Jobs
+  from "./pages/Jobs.jsx";
+
+import Recommendations
+  from "./pages/Recommendations.jsx";
+
+import ServiceDetails
+  from "./pages/ServiceDetails.jsx";
+
+import JobDetails
+  from "./pages/JobDetails.jsx";
+
+import Login
+  from "./pages/Login.jsx";
+
+
+/* ======================================================
+   ADMIN PAGES
+====================================================== */
+
+import AdminDashboard
+  from "./pages/admin/AdminDashboard.jsx";
+
+import ManageServices
+  from "./pages/admin/ManageServices.jsx";
+
+import ManageJobs
+  from "./pages/admin/ManageJobs.jsx";
+
+import ViewListings
+  from "./pages/admin/ViewListings.jsx";
+
+import AdminLogs
+  from "./pages/admin/AdminLogs.jsx";
+
+
+/* ======================================================
+   ROUTE PROTECTION
+====================================================== */
+
+import ProtectedRoute
+  from "./components/ProtectedRoute.jsx";
+
+
+/* ======================================================
+   RESPONSIVE ADMIN SHELL
+====================================================== */
+
+import AdminResponsiveShell
+  from "./components/AdminResponsiveShell.jsx";
+
+
+/* ======================================================
+   ADMIN PAGE WRAPPER
+====================================================== */
+
+function ProtectedAdminPage({
+  children,
+}) {
+  return (
+    <ProtectedRoute>
+
+      <AdminResponsiveShell>
+
+        {children}
+
+      </AdminResponsiveShell>
+
+    </ProtectedRoute>
+  );
+}
+
+
+function App() {
+  return (
+    <Routes>
+
+      {/* ==================================================
+          PUBLIC
+      ================================================== */}
+
+      <Route
+        path="/"
+        element={
+          <Home />
+        }
+      />
+
+
+      <Route
+        path="/accommodation"
+        element={
+          <Accommodation />
+        }
+      />
+
+
+      <Route
+        path="/food-support"
+        element={
+          <FoodSupport />
+        }
+      />
+
+
+      <Route
+        path="/jobs"
+        element={
+          <Jobs />
+        }
+      />
+
+
+      <Route
+        path="/jobs/:id"
+        element={
+          <JobDetails />
+        }
+      />
+
+
+      <Route
+        path="/recommendations"
+        element={
+          <Recommendations />
+        }
+      />
+
+
+      <Route
+        path="/services/:id"
+        element={
+          <ServiceDetails />
+        }
+      />
+
+
+      <Route
+        path="/login"
+        element={
+          <Login />
+        }
+      />
+
+
+      {/* ==================================================
+          ADMIN DASHBOARD
+      ================================================== */}
+
+      <Route
+        path="/admin"
+        element={
+          <ProtectedAdminPage>
+
+            <AdminDashboard />
+
+          </ProtectedAdminPage>
+        }
+      />
+
+
+      {/* ==================================================
+          MANAGE SERVICES
+      ================================================== */}
+
+      <Route
+        path="/admin/services"
+        element={
+          <ProtectedAdminPage>
+
+            <ManageServices />
+
+          </ProtectedAdminPage>
+        }
+      />
+
+
+      {/* ==================================================
+          MANAGE JOBS
+      ================================================== */}
+
+      <Route
+        path="/admin/jobs"
+        element={
+          <ProtectedAdminPage>
+
+            <ManageJobs />
+
+          </ProtectedAdminPage>
+        }
+      />
+
+
+      {/* ==================================================
+          VIEW LISTINGS
+      ================================================== */}
+
+      <Route
+        path="/admin/listings"
+        element={
+          <ProtectedAdminPage>
+
+            <ViewListings />
+
+          </ProtectedAdminPage>
+        }
+      />
+
+
+      {/* ==================================================
+          EVENT LOGS
+      ================================================== */}
+
+      <Route
+        path="/admin/logs"
+        element={
+          <ProtectedAdminPage>
+
+            <AdminLogs />
+
+          </ProtectedAdminPage>
+        }
+      />
+
+
+      {/* ==================================================
+          UNKNOWN
+      ================================================== */}
+
+      <Route
+        path="*"
+        element={
+          <Home />
+        }
+      />
+
+    </Routes>
+  );
+}
+
+
+export default App;

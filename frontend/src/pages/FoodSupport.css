@@ -1,0 +1,1155 @@
+/* ======================================================
+   PAGE
+====================================================== */
+
+.food-page {
+  min-height: 100vh;
+
+  background: #f8fbff;
+  color: #0e1b4d;
+}
+
+
+/* ======================================================
+   NAVBAR
+====================================================== */
+
+.food-navbar {
+  position: sticky;
+  top: 0;
+
+  z-index: 100;
+
+  height: 82px;
+
+  padding: 0 7%;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  background: #ffffff;
+
+  border-bottom: 1px solid #edf1f7;
+}
+
+
+.food-logo {
+  color: #1e6bff;
+
+  font-size: 28px;
+  font-weight: 800;
+
+  text-decoration: none;
+}
+
+
+.food-nav-links {
+  height: 82px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 30px;
+}
+
+
+.food-nav-link {
+  position: relative;
+
+  height: 82px;
+
+  display: flex;
+  align-items: center;
+
+  color: #0e1b4d;
+
+  font-size: 15px;
+  font-weight: 500;
+
+  text-decoration: none;
+}
+
+
+.food-nav-link:hover {
+  color: #1e6bff;
+}
+
+
+.food-nav-link.active {
+  color: #1e6bff;
+
+  font-weight: 700;
+}
+
+
+.food-nav-link.active::after {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  height: 3px;
+
+  border-radius: 5px 5px 0 0;
+
+  background: #1e6bff;
+}
+
+
+.food-login {
+  padding: 11px 24px;
+
+  border-radius: 10px;
+
+  background: #1e6bff;
+  color: #ffffff;
+
+  font-weight: 600;
+
+  text-decoration: none;
+}
+
+
+.food-login:hover {
+  background: #1559db;
+}
+
+
+/* ======================================================
+   MOBILE MENU
+====================================================== */
+
+.food-menu-button {
+  display: none;
+
+  width: 46px;
+  height: 46px;
+
+  padding: 0;
+
+  border: none;
+  border-radius: 11px;
+
+  background: #eaf5ff;
+  color: #1e6bff;
+
+  cursor: pointer;
+}
+
+
+.food-menu-button svg {
+  width: 25px;
+  height: 25px;
+}
+
+
+.food-mobile-nav {
+  display: none;
+}
+
+
+/* ======================================================
+   PAGE HEADER
+====================================================== */
+
+.food-heading-section {
+  padding: 58px 7% 34px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #ffffff 0%,
+      #f3fbf7 100%
+    );
+}
+
+
+.food-container {
+  width: 100%;
+  max-width: 1280px;
+
+  margin: 0 auto;
+}
+
+
+.food-title-row {
+  display: flex;
+  align-items: center;
+
+  gap: 18px;
+}
+
+
+.food-title-icon {
+  width: 64px;
+  height: 64px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 18px;
+
+  background: #e5f7ef;
+
+  font-size: 34px;
+}
+
+
+.food-title-row h1 {
+  margin: 0 0 6px;
+
+  color: #0e1b4d;
+
+  font-size: 42px;
+  line-height: 1.15;
+}
+
+
+.food-title-row p {
+  margin: 0;
+
+  color: #64708d;
+
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+
+/* ======================================================
+   FILTER AREA
+====================================================== */
+
+.food-search-section {
+  padding: 0 7% 42px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #ffffff 0%,
+      #f3fbf7 100%
+    );
+}
+
+
+.food-filter-card {
+  width: 100%;
+  max-width: 1280px;
+
+  margin: 0 auto;
+
+  padding: 20px;
+
+  display: grid;
+
+  grid-template-columns:
+    1.4fr
+    1.2fr
+    auto;
+
+  align-items: end;
+
+  gap: 15px;
+
+  border: 1px solid #dce8f5;
+  border-radius: 18px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 10px 30px
+    rgba(14, 27, 77, 0.06);
+}
+
+
+.food-filter-field label {
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: #34415f;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+
+/* LOCATION */
+
+.food-location-input {
+  min-height: 52px;
+
+  display: flex;
+  align-items: center;
+
+  border: 2px solid #dce8f5;
+  border-radius: 11px;
+
+  background: #f8fbff;
+}
+
+
+.food-location-input:focus-within {
+  border-color: #22b573;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(34, 181, 115, 0.08);
+}
+
+
+.food-location-input svg {
+  width: 20px;
+  height: 20px;
+
+  margin-left: 14px;
+
+  flex-shrink: 0;
+
+  color: #22b573;
+}
+
+
+.food-location-input input {
+  width: 100%;
+  min-width: 0;
+
+  padding: 0 13px;
+
+  border: none;
+  outline: none;
+
+  background: transparent;
+
+  color: #0e1b4d;
+
+  font-size: 15px;
+}
+
+
+.food-location-input input::placeholder {
+  color: #7c87a3;
+}
+
+
+/* SERVICE TYPE */
+
+.food-filter-field select {
+  width: 100%;
+  min-height: 52px;
+
+  padding: 0 15px;
+
+  border: 2px solid #dce8f5;
+  border-radius: 11px;
+
+  outline: none;
+
+  background: #f8fbff;
+
+  color: #4d5978;
+
+  font-size: 15px;
+
+  cursor: pointer;
+}
+
+
+.food-filter-field select:focus {
+  border-color: #22b573;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(34, 181, 115, 0.08);
+}
+
+
+/* SEARCH BUTTON */
+
+.food-search-button {
+  min-height: 52px;
+
+  padding: 0 26px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  border: none;
+  border-radius: 11px;
+
+  background: #1e6bff;
+  color: #ffffff;
+
+  font-size: 15px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+
+.food-search-button:hover {
+  background: #1559db;
+}
+
+
+.food-search-button svg {
+  width: 19px;
+  height: 19px;
+}
+
+
+/* ======================================================
+   RESULTS
+====================================================== */
+
+.food-results-section {
+  width: 100%;
+  max-width: 1280px;
+
+  margin: 0 auto;
+
+  padding: 68px 7% 100px;
+}
+
+
+.food-results-header {
+  margin-bottom: 30px;
+
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+
+  gap: 20px;
+}
+
+
+.food-results-label {
+  margin: 0 0 7px;
+
+  color: #22b573;
+
+  font-size: 12px;
+  font-weight: 800;
+
+  letter-spacing: 1.1px;
+}
+
+
+.food-results-header h2 {
+  margin: 0;
+
+  color: #0e1b4d;
+
+  font-size: 32px;
+}
+
+
+.food-result-count {
+  margin: 8px 0 0;
+
+  color: #78839d;
+
+  font-size: 14px;
+}
+
+
+.food-clear-button {
+  padding: 10px 16px;
+
+  border: 1px solid #dce8f5;
+  border-radius: 9px;
+
+  background: #ffffff;
+
+  color: #1e6bff;
+
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+
+/* ======================================================
+   CARDS
+====================================================== */
+
+.food-list {
+  display: flex;
+  flex-direction: column;
+
+  gap: 22px;
+}
+
+
+.food-service-card {
+  min-height: 230px;
+
+  display: grid;
+
+  grid-template-columns:
+    280px 1fr;
+
+  overflow: hidden;
+
+  border: 1px solid #e3ebf5;
+  border-radius: 18px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 8px 25px
+    rgba(14, 27, 77, 0.05);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+.food-service-card:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 13px 32px
+    rgba(14, 27, 77, 0.09);
+}
+
+
+.food-card-image {
+  min-height: 230px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background:
+    linear-gradient(
+      135deg,
+      #dff7eb,
+      #f4fcf8
+    );
+}
+
+
+.food-card-icon {
+  width: 115px;
+  height: 115px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #ffffff;
+
+  font-size: 60px;
+
+  box-shadow:
+    0 10px 25px
+    rgba(34, 181, 115, 0.12);
+}
+
+
+.food-card-content {
+  padding: 28px 30px;
+
+  display: flex;
+  flex-direction: column;
+}
+
+
+.food-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 20px;
+}
+
+
+.food-service-tag {
+  display: inline-flex;
+
+  margin-bottom: 9px;
+
+  padding: 6px 10px;
+
+  border-radius: 20px;
+
+  background: #e5f7ef;
+  color: #168b59;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+
+.food-card-heading h3 {
+  margin: 0;
+
+  color: #0e1b4d;
+
+  font-size: 24px;
+}
+
+
+.food-cost {
+  padding: 7px 12px;
+
+  flex-shrink: 0;
+
+  border-radius: 20px;
+
+  background: #fff4d8;
+  color: #a56600;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+
+.food-cost-free {
+  background: #e5f7ef;
+  color: #168b59;
+}
+
+
+.food-meta {
+  margin-top: 15px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 7px;
+
+  color: #586582;
+
+  font-size: 14px;
+}
+
+
+.food-meta svg {
+  width: 18px;
+  height: 18px;
+
+  color: #22b573;
+}
+
+
+.food-description {
+  max-width: 650px;
+
+  margin: 17px 0 20px;
+
+  color: #66718c;
+
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+
+.food-view-button {
+  width: fit-content;
+
+  margin-top: auto;
+
+  padding: 11px 18px;
+
+  display: inline-flex;
+  align-items: center;
+
+  gap: 10px;
+
+  border: none;
+  border-radius: 10px;
+
+  background: #1e6bff;
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+
+.food-view-button:hover {
+  background: #1559db;
+}
+
+
+/* ======================================================
+   NO RESULTS
+====================================================== */
+
+.food-no-results {
+  padding: 65px 25px;
+
+  text-align: center;
+
+  border: 1px dashed #cbd9ea;
+  border-radius: 18px;
+
+  background: #ffffff;
+}
+
+
+.food-no-results-icon {
+  margin-bottom: 15px;
+
+  font-size: 48px;
+}
+
+
+.food-no-results h3 {
+  margin: 0 0 8px;
+
+  color: #0e1b4d;
+
+  font-size: 22px;
+}
+
+
+.food-no-results p {
+  margin: 0 0 22px;
+
+  color: #6e7891;
+}
+
+
+.food-no-results button {
+  padding: 11px 18px;
+
+  border: none;
+  border-radius: 10px;
+
+  background: #1e6bff;
+  color: #ffffff;
+
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+
+/* ======================================================
+   FOOTER
+====================================================== */
+
+.food-footer {
+  padding: 55px 7%;
+
+  display: grid;
+
+  grid-template-columns:
+    2fr 1fr 1fr;
+
+  gap: 50px;
+
+  background: #0e1b4d;
+  color: #ffffff;
+}
+
+
+.food-footer-brand h2 {
+  margin: 0 0 12px;
+
+  font-size: 28px;
+}
+
+
+.food-footer-brand p {
+  max-width: 320px;
+
+  margin: 0;
+
+  color: #b9c5e2;
+
+  line-height: 1.7;
+}
+
+
+.food-footer-column {
+  display: flex;
+  flex-direction: column;
+
+  gap: 11px;
+}
+
+
+.food-footer-column h4 {
+  margin: 0 0 5px;
+}
+
+
+.food-footer-column a,
+.food-footer-column span {
+  color: #b9c5e2;
+
+  font-size: 14px;
+
+  text-decoration: none;
+}
+
+
+.food-footer-column a:hover {
+  color: #ffffff;
+}
+
+
+.food-copyright {
+  padding: 18px;
+
+  background: #0a163e;
+  color: #aeb9d4;
+
+  text-align: center;
+
+  font-size: 13px;
+}
+
+
+/* ======================================================
+   TABLET
+====================================================== */
+
+@media (max-width: 900px) {
+
+  .food-nav-links,
+  .food-desktop-login {
+    display: none;
+  }
+
+
+  .food-menu-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+
+  .food-mobile-nav {
+    position: absolute;
+
+    top: 82px;
+    left: 0;
+    right: 0;
+
+    z-index: 200;
+
+    padding: 12px 7% 20px;
+
+    display: flex;
+    flex-direction: column;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 12px 30px
+      rgba(14, 27, 77, 0.12);
+  }
+
+
+  .food-mobile-link {
+    min-height: 50px;
+
+    padding: 14px 16px;
+
+    display: flex;
+    align-items: center;
+
+    border-left: 4px solid transparent;
+    border-radius: 10px;
+
+    color: #0e1b4d;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    text-decoration: none;
+  }
+
+
+  .food-mobile-link:hover {
+    background: #f1f7ff;
+
+    color: #1e6bff;
+  }
+
+
+  .food-mobile-link.active {
+    border-left-color: #1e6bff;
+
+    background: #eaf5ff;
+
+    color: #1e6bff;
+
+    font-weight: 700;
+  }
+
+
+  .food-mobile-login {
+    min-height: 50px;
+
+    margin-top: 10px;
+
+    padding: 14px 16px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+
+    background: #1e6bff;
+    color: #ffffff;
+
+    font-weight: 700;
+
+    text-decoration: none;
+  }
+
+
+  .food-filter-card {
+    grid-template-columns:
+      1fr 1fr;
+  }
+
+
+  .food-search-button {
+    width: 100%;
+  }
+
+
+  .food-service-card {
+    grid-template-columns:
+      230px 1fr;
+  }
+
+
+  .food-footer {
+    grid-template-columns:
+      1fr 1fr;
+  }
+
+
+  .food-footer-brand {
+    grid-column: 1 / -1;
+  }
+
+}
+
+
+/* ======================================================
+   MOBILE
+====================================================== */
+
+@media (max-width: 600px) {
+
+  .food-navbar {
+    height: 72px;
+
+    padding: 0 18px;
+  }
+
+
+  .food-logo {
+    font-size: 27px;
+  }
+
+
+  .food-mobile-nav {
+    top: 72px;
+
+    padding:
+      12px 18px
+      20px;
+  }
+
+
+  .food-heading-section {
+    padding:
+      36px 18px
+      24px;
+  }
+
+
+  .food-title-row {
+    align-items: flex-start;
+
+    gap: 14px;
+  }
+
+
+  .food-title-icon {
+    width: 54px;
+    height: 54px;
+
+    font-size: 28px;
+
+    border-radius: 15px;
+  }
+
+
+  .food-title-row h1 {
+    font-size: 33px;
+  }
+
+
+  .food-title-row p {
+    font-size: 15px;
+  }
+
+
+  .food-search-section {
+    padding:
+      0 18px
+      35px;
+  }
+
+
+  .food-filter-card {
+    padding: 17px;
+
+    grid-template-columns: 1fr;
+
+    gap: 15px;
+
+    border-radius: 16px;
+  }
+
+
+  .food-location-input,
+  .food-filter-field select {
+    min-height: 55px;
+  }
+
+
+  .food-search-button {
+    min-height: 55px;
+
+    font-size: 16px;
+  }
+
+
+  .food-results-section {
+    padding:
+      50px 18px
+      75px;
+  }
+
+
+  .food-results-header {
+    align-items: flex-start;
+  }
+
+
+  .food-results-header h2 {
+    font-size: 28px;
+  }
+
+
+  .food-service-card {
+    display: block;
+
+    min-height: 0;
+  }
+
+
+  .food-card-image {
+    width: 100%;
+    height: 200px;
+    min-height: 200px;
+  }
+
+
+  .food-card-content {
+    padding: 23px 21px;
+  }
+
+
+  .food-card-heading {
+    gap: 10px;
+  }
+
+
+  .food-card-heading h3 {
+    font-size: 22px;
+  }
+
+
+  .food-description {
+    margin-bottom: 18px;
+  }
+
+
+  .food-view-button {
+    width: 100%;
+
+    min-height: 48px;
+
+    justify-content: center;
+  }
+
+
+  .food-footer {
+    padding:
+      50px 18px;
+
+    grid-template-columns: 1fr;
+
+    gap: 30px;
+  }
+
+
+  .food-footer-brand {
+    grid-column: auto;
+  }
+
+}
+
+
+/* ======================================================
+   VERY SMALL MOBILE
+====================================================== */
+
+@media (max-width: 390px) {
+
+  .food-title-row h1 {
+    font-size: 29px;
+  }
+
+
+  .food-title-icon {
+    width: 48px;
+    height: 48px;
+
+    font-size: 25px;
+  }
+
+
+  .food-results-header {
+    flex-direction: column;
+  }
+
+
+  .food-card-heading {
+    flex-direction: column;
+  }
+
+
+  .food-cost {
+    width: fit-content;
+  }
+
+}

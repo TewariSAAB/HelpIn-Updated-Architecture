@@ -1,0 +1,1132 @@
+@import url(
+  "https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"
+);
+
+
+/* ======================================================
+   PAGE
+====================================================== */
+
+.split-login-page {
+  width: 100%;
+  min-height: 100vh;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(480px, 0.82fr);
+
+  font-family:
+    "Inter",
+    Arial,
+    sans-serif;
+
+  background: #ffffff;
+}
+
+
+/* ======================================================
+   LEFT
+====================================================== */
+
+.split-login-left {
+  position: relative;
+
+  min-height: 100vh;
+
+  padding:
+    48px 65px
+    45px;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  background:
+    linear-gradient(
+      145deg,
+      #eaf8fa 0%,
+      #edf7ff 52%,
+      #f6fbff 100%
+    );
+}
+
+
+/* ======================================================
+   BRAND
+====================================================== */
+
+.split-login-brand {
+  position: relative;
+  z-index: 5;
+
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  width: fit-content;
+
+  color: #071e59;
+
+  text-decoration: none;
+}
+
+.split-login-logo {
+  width: 49px;
+  height: 49px;
+}
+
+.split-login-brand > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.split-login-brand strong {
+  font-size: 29px;
+  font-weight: 800;
+
+  line-height: 1;
+}
+
+.split-login-brand span {
+  margin-top: 7px;
+
+  color: #57718e;
+
+  font-size: 9px;
+  font-weight: 700;
+
+  letter-spacing: 1.6px;
+}
+
+
+/* ======================================================
+   LEFT DECORATION
+====================================================== */
+
+.quote-decoration {
+  position: absolute;
+
+  border-radius: 50%;
+
+  pointer-events: none;
+}
+
+.quote-circle-one {
+  width: 390px;
+  height: 390px;
+
+  top: -170px;
+  right: -120px;
+
+  background:
+    rgba(
+      19,
+      181,
+      174,
+      0.13
+    );
+}
+
+.quote-circle-two {
+  width: 320px;
+  height: 320px;
+
+  left: -180px;
+  bottom: -120px;
+
+  background:
+    rgba(
+      30,
+      107,
+      255,
+      0.09
+    );
+}
+
+
+/* ======================================================
+   QUOTE
+====================================================== */
+
+.split-login-quote {
+  position: relative;
+  z-index: 5;
+
+  width: 100%;
+  max-width: 650px;
+
+  margin: auto;
+
+  padding:
+    20px 25px;
+}
+
+.quote-mark {
+  display: block;
+
+  height: 65px;
+
+  color: #13a9a4;
+
+  font-family:
+    Georgia,
+    serif;
+
+  font-size: 92px;
+
+  line-height: 1;
+}
+
+.split-login-quote h1 {
+  margin: 0;
+
+  color: #08436e;
+
+  font-family:
+    "Caveat",
+    cursive;
+
+  font-size:
+    clamp(
+      48px,
+      5vw,
+      74px
+    );
+
+  font-weight: 600;
+
+  line-height: 0.98;
+
+  letter-spacing: -1px;
+}
+
+.quote-line {
+  width: 180px;
+  height: 5px;
+
+  margin:
+    26px 0 18px;
+
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #13b5ae,
+      #44cfc5
+    );
+
+  transform:
+    rotate(-3deg);
+}
+
+.split-login-quote p {
+  margin: 0;
+
+  color: #0e1b4d;
+
+  font-size: 20px;
+  font-weight: 700;
+}
+
+
+/* ======================================================
+   LEFT FOOTER
+====================================================== */
+
+.split-login-left-footer {
+  position: relative;
+  z-index: 5;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  color: #607590;
+}
+
+.split-login-left-footer span {
+  color: #13aaa5;
+
+  font-size: 24px;
+}
+
+.split-login-left-footer p {
+  margin: 0;
+
+  font-size: 11px;
+  font-weight: 600;
+}
+
+
+/* ======================================================
+   RIGHT SIDE
+====================================================== */
+
+.split-login-right {
+  position: relative;
+
+  min-height: 100vh;
+
+  padding:
+    40px 50px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background:
+    linear-gradient(
+      145deg,
+      #ffffff 0%,
+      #f7fbff 100%
+    );
+}
+
+
+/* ======================================================
+   BACK
+====================================================== */
+
+.split-login-back {
+  position: absolute;
+
+  top: 34px;
+  right: 45px;
+
+  padding:
+    10px 13px;
+
+  border-radius: 8px;
+
+  color: #6f7f97;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  text-decoration: none;
+}
+
+.split-login-back:hover {
+  background: #eaf5ff;
+
+  color: #1e6bff;
+}
+
+
+/* ======================================================
+   CARD
+====================================================== */
+
+.split-login-card {
+  width: 100%;
+  max-width: 490px;
+
+  padding:
+    42px 42px
+    36px;
+
+  border:
+    1px solid #dce7f3;
+
+  border-radius: 24px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 24px 70px
+    rgba(
+      14,
+      27,
+      77,
+      0.12
+    );
+}
+
+
+/* ======================================================
+   CARD BRAND
+====================================================== */
+
+.login-card-brand {
+  margin-bottom: 28px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 9px;
+}
+
+.login-card-brand svg {
+  width: 42px;
+  height: 42px;
+}
+
+.login-card-brand strong {
+  color: #071e59;
+
+  font-size: 26px;
+  font-weight: 800;
+}
+
+
+/* ======================================================
+   HEADING
+====================================================== */
+
+.split-login-heading {
+  margin-bottom: 29px;
+
+  text-align: center;
+}
+
+.split-login-heading > span {
+  display: inline-flex;
+
+  margin-bottom: 11px;
+
+  padding:
+    6px 11px;
+
+  border-radius: 30px;
+
+  background: #eaf5ff;
+
+  color: #1e6bff;
+
+  font-size: 9px;
+  font-weight: 800;
+
+  letter-spacing: 1.2px;
+}
+
+.split-login-heading h2 {
+  margin:
+    0 0 10px;
+
+  color: #071e59;
+
+  font-size: 34px;
+  font-weight: 800;
+
+  letter-spacing: -0.7px;
+}
+
+.split-login-heading p {
+  max-width: 365px;
+
+  margin: auto;
+
+  color: #7d89a2;
+
+  font-size: 13px;
+
+  line-height: 1.6;
+}
+
+
+/* ======================================================
+   ERROR
+====================================================== */
+
+.split-login-error {
+  margin-bottom: 18px;
+
+  padding:
+    12px 14px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 9px;
+
+  border:
+    1px solid #ffcaca;
+
+  border-radius: 10px;
+
+  background: #fff4f4;
+
+  color: #c83e3e;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  line-height: 1.5;
+}
+
+.split-login-error strong {
+  flex: 0 0 auto;
+
+  width: 20px;
+  height: 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #db4c4c;
+
+  color: white;
+}
+
+
+/* ======================================================
+   SUCCESS
+====================================================== */
+
+.split-login-success {
+  margin-bottom: 18px;
+
+  padding:
+    12px 14px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 9px;
+
+  border:
+    1px solid #bdebd4;
+
+  border-radius: 10px;
+
+  background: #effbf5;
+
+  color: #17784c;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  line-height: 1.5;
+}
+
+.split-login-success strong {
+  flex: 0 0 auto;
+
+  width: 20px;
+  height: 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #22b573;
+
+  color: #ffffff;
+}
+
+
+/* ======================================================
+   FORM
+====================================================== */
+
+.split-login-form {
+  display: flex;
+  flex-direction: column;
+
+  gap: 20px;
+}
+
+.split-login-field {
+  display: flex;
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+.split-login-field label {
+  color: #24365f;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.split-login-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  gap: 15px;
+}
+
+
+/* ======================================================
+   INPUT
+====================================================== */
+
+.split-login-input {
+  min-height: 54px;
+
+  display: flex;
+  align-items: center;
+
+  border:
+    1px solid #d2ddea;
+
+  border-radius: 11px;
+
+  background: #ffffff;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.split-login-input:focus-within {
+  border-color: #1e6bff;
+
+  box-shadow:
+    0 0 0 4px
+    rgba(
+      30,
+      107,
+      255,
+      0.08
+    );
+}
+
+.split-login-input > span {
+  width: 48px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #8898af;
+
+  font-size: 18px;
+}
+
+.split-login-input input {
+  flex: 1;
+
+  width: 100%;
+  min-width: 0;
+
+  padding:
+    0 8px 0 0;
+
+  border: none;
+  outline: none;
+
+  background: transparent;
+
+  color: #0e1b4d;
+
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.split-login-input input::placeholder {
+  color: #a4adbd;
+}
+
+.split-login-input input:disabled {
+  cursor: not-allowed;
+}
+
+
+/* ======================================================
+   SHOW PASSWORD
+====================================================== */
+
+.split-show-password {
+  margin-right: 10px;
+
+  padding:
+    7px 9px;
+
+  border: none;
+
+  border-radius: 7px;
+
+  background: transparent;
+
+  color: #1e6bff;
+
+  font-family: inherit;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.split-show-password:hover:not(:disabled) {
+  background: #eaf5ff;
+}
+
+
+/* ======================================================
+   FORGOT PASSWORD BUTTON
+====================================================== */
+
+.split-forgot {
+  padding: 0;
+
+  border: none;
+
+  background: transparent;
+
+  color: #1e6bff;
+
+  font-family: inherit;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.split-forgot:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.split-forgot:disabled,
+.split-show-password:disabled {
+  opacity: 0.6;
+
+  cursor: not-allowed;
+}
+
+
+/* ======================================================
+   PRIMARY BUTTON
+====================================================== */
+
+.split-login-button {
+  min-height: 54px;
+
+  margin-top: 4px;
+
+  padding:
+    0 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 12px;
+
+  border: none;
+
+  border-radius: 11px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #1769f6,
+      #1597d7
+    );
+
+  color: #ffffff;
+
+  font-family: inherit;
+
+  font-size: 14px;
+  font-weight: 800;
+
+  box-shadow:
+    0 10px 24px
+    rgba(
+      30,
+      107,
+      255,
+      0.22
+    );
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.split-login-button:hover:not(:disabled) {
+  transform:
+    translateY(-1px);
+}
+
+.split-login-button:disabled {
+  opacity: 0.65;
+
+  cursor: not-allowed;
+}
+
+
+/* ======================================================
+   SECONDARY BUTTON
+====================================================== */
+
+.split-login-secondary {
+  width: 100%;
+
+  min-height: 48px;
+
+  margin-top: 15px;
+
+  border:
+    1px solid #cbd9e8;
+
+  border-radius: 11px;
+
+  background: #ffffff;
+
+  color: #1e6bff;
+
+  font-family: inherit;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.split-login-secondary:hover:not(:disabled) {
+  background: #f3f8ff;
+
+  border-color: #1e6bff;
+}
+
+.split-login-secondary:disabled {
+  opacity: 0.6;
+
+  cursor: not-allowed;
+}
+
+
+/* ======================================================
+   DIVIDER
+====================================================== */
+
+.split-login-divider {
+  margin:
+    27px 0 19px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 13px;
+}
+
+.split-login-divider span {
+  flex: 1;
+
+  height: 1px;
+
+  background: #dfe7f0;
+}
+
+.split-login-divider p {
+  margin: 0;
+
+  color: #9aa5b5;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+
+/* ======================================================
+   GUEST
+====================================================== */
+
+.split-login-guest {
+  min-height: 50px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 10px;
+
+  border:
+    1px solid #cbd9e8;
+
+  border-radius: 11px;
+
+  color: #1e6bff;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  text-decoration: none;
+}
+
+.split-login-guest:hover {
+  background: #f3f8ff;
+
+  border-color: #1e6bff;
+}
+
+
+/* ======================================================
+   SECURITY
+====================================================== */
+
+.split-login-security {
+  margin:
+    20px 0 0;
+
+  color: #a0aabd;
+
+  font-size: 9px;
+
+  text-align: center;
+}
+
+
+/* ======================================================
+   RESET INFORMATION
+====================================================== */
+
+.reset-information,
+.password-requirements {
+  padding:
+    13px 14px;
+
+  border:
+    1px solid #d8e8f7;
+
+  border-radius: 11px;
+
+  background: #f8fbff;
+}
+
+.reset-information strong,
+.password-requirements strong {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #0e1b4d;
+
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.reset-information p,
+.password-requirements p {
+  margin: 0;
+
+  color: #6f7f97;
+
+  font-size: 10px;
+
+  line-height: 1.55;
+}
+
+
+/* ======================================================
+   RESET ACTIONS
+====================================================== */
+
+.reset-actions {
+  margin-top: 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 10px;
+
+  color: #b0bac8;
+
+  font-size: 10px;
+}
+
+.reset-link-button {
+  padding: 4px;
+
+  border: none;
+
+  background: transparent;
+
+  color: #1e6bff;
+
+  font-family: inherit;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.reset-link-button:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.reset-link-button:disabled {
+  opacity: 0.55;
+
+  cursor: not-allowed;
+}
+
+
+/* ======================================================
+   TABLET
+====================================================== */
+
+@media (max-width: 1000px) {
+
+  .split-login-page {
+    grid-template-columns:
+      1fr 1fr;
+  }
+
+  .split-login-left {
+    padding:
+      42px 35px;
+  }
+
+  .split-login-quote h1 {
+    font-size: 50px;
+  }
+
+  .split-login-right {
+    padding:
+      40px 25px;
+  }
+
+  .split-login-card {
+    padding:
+      37px 30px
+      32px;
+  }
+
+}
+
+
+/* ======================================================
+   MOBILE
+====================================================== */
+
+@media (max-width: 760px) {
+
+  .split-login-page {
+    display: block;
+  }
+
+  .split-login-left {
+    min-height: 390px;
+
+    padding:
+      28px 24px;
+  }
+
+  .split-login-brand strong {
+    font-size: 24px;
+  }
+
+  .split-login-brand span {
+    font-size: 7px;
+  }
+
+  .split-login-logo {
+    width: 41px;
+    height: 41px;
+  }
+
+  .split-login-quote {
+    padding:
+      35px 8px
+      20px;
+  }
+
+  .quote-mark {
+    height: 45px;
+
+    font-size: 65px;
+  }
+
+  .split-login-quote h1 {
+    font-size: 43px;
+  }
+
+  .quote-line {
+    margin:
+      19px 0 14px;
+  }
+
+  .split-login-quote p {
+    font-size: 16px;
+  }
+
+  .split-login-left-footer {
+    display: none;
+  }
+
+  .split-login-right {
+    min-height: auto;
+
+    padding:
+      50px 16px
+      35px;
+  }
+
+  .split-login-back {
+    top: 13px;
+    right: 15px;
+  }
+
+  .split-login-card {
+    max-width: 500px;
+
+    padding:
+      32px 22px
+      28px;
+
+    border-radius: 19px;
+  }
+
+  .split-login-heading h2 {
+    font-size: 30px;
+  }
+
+}
+
+
+/* ======================================================
+   SMALL MOBILE
+====================================================== */
+
+@media (max-width: 420px) {
+
+  .split-login-left {
+    min-height: 340px;
+  }
+
+  .split-login-quote h1 {
+    font-size: 37px;
+  }
+
+  .split-login-card {
+    padding:
+      28px 18px
+      25px;
+  }
+
+  .split-login-heading h2 {
+    font-size: 27px;
+  }
+
+  .split-login-input {
+    min-height: 51px;
+  }
+
+  .split-login-button {
+    min-height: 51px;
+  }
+
+}
