@@ -372,8 +372,8 @@ Resources:
 
   HelpInAssetsBucket:
     Type: AWS::S3::Bucket
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       BucketName: !Sub '${ProjectName}-assets-${AWS::AccountId}-${AWS::Region}'
       BucketEncryption:
@@ -433,8 +433,8 @@ Resources:
 
   HelpInLambdaDeploymentBucket:
     Type: AWS::S3::Bucket
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       BucketName: !Sub '${ProjectName}-lambda-deployment-${AWS::AccountId}-${AWS::Region}'
       BucketEncryption:
@@ -468,8 +468,8 @@ Resources:
 
   HelpInDBSecret:
     Type: AWS::SecretsManager::Secret
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       Name: !Sub '${ProjectName}/rds/mysql/master'
       Description: HelpIn RDS MySQL master credentials
@@ -504,8 +504,8 @@ Resources:
 
   HelpInDBInstance:
     Type: AWS::RDS::DBInstance
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       DBInstanceIdentifier: !Sub '${ProjectName}-mysql-db'
       DBName: !Ref DBName
@@ -547,9 +547,33 @@ Resources:
     Type: AWS::Cognito::UserPool
     Properties:
       UserPoolName: !Sub '${ProjectName}-user-pool'
+
       UsernameConfiguration:
         CaseSensitive: false
+
       MfaConfiguration: 'OFF'
+
+      # Verify email addresses before Cognito uses them for account recovery.
+      AutoVerifiedAttributes:
+        - email
+
+      # Forgot Password sends the recovery code only to a verified email address.
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+
+      # If a user changes their recovery email, the new address must be
+      # verified before Cognito treats it as the active email address.
+      UserAttributeUpdateSettings:
+        AttributesRequireVerificationBeforeUpdate:
+          - email
+
+      # Cognito uses its built-in email delivery for verification and
+      # password-recovery codes. No email address is stored in HelpIn RDS.
+      EmailConfiguration:
+        EmailSendingAccount: COGNITO_DEFAULT
+
       Policies:
         PasswordPolicy:
           MinimumLength: 8
@@ -558,8 +582,10 @@ Resources:
           RequireSymbols: false
           RequireUppercase: true
           TemporaryPasswordValidityDays: 7
+
       AdminCreateUserConfig:
         AllowAdminCreateUserOnly: false
+
       UserPoolTags:
         Project: !Ref ProjectName
 
