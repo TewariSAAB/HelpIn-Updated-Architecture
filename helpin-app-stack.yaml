@@ -721,10 +721,11 @@ Resources:
         30
 
 
+
   ############################################################
   # SQS -> Event Processor Lambda
   ############################################################
- 
+
   HelpInEventQueueMapping:
     Type: AWS::Lambda::EventSourceMapping
     Properties:
@@ -734,6 +735,8 @@ Resources:
       BatchSize: 10
       ScalingConfig:
         MaximumConcurrency: 2
+
+
 
 
   ############################################################
