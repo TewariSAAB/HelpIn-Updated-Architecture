@@ -1,4 +1,7 @@
-import { useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 
 import {
   Link,
@@ -7,6 +10,10 @@ import {
 } from "react-router-dom";
 
 import heroImage from "../assets/helpin.png";
+
+import {
+  getServices,
+} from "../services/api";
 
 import "./Home.css";
 
@@ -30,6 +37,67 @@ function Home() {
 
   const [category, setCategory] =
     useState("");
+
+  const [
+    recentServices,
+    setRecentServices,
+  ] = useState([]);
+
+  const [
+    servicesLoading,
+    setServicesLoading,
+  ] = useState(true);
+
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadRecentServices() {
+      try {
+        const response =
+          await getServices();
+
+        const services =
+          Array.isArray(response)
+            ? response
+            : response?.services || [];
+
+        if (active) {
+          setRecentServices(
+            services
+              .slice(0, 3)
+              .map((service) => ({
+                id: service.id,
+                name: service.name || "",
+                category:
+                  service.category || "",
+                location:
+                  service.location || "",
+                serviceType:
+                  service.service_type || "",
+                imageUrl:
+                  service.image_url || "",
+              }))
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Unable to load recent services:",
+          error
+        );
+      } finally {
+        if (active) {
+          setServicesLoading(false);
+        }
+      }
+    }
+
+    loadRecentServices();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
 
   /* ======================================================
@@ -815,6 +883,109 @@ function Home() {
           </article>
 
         </div>
+
+      </section>
+
+
+      {/* ==================================================
+          RECENT SERVICES
+      ================================================== */}
+
+      <section className="home-recent-section">
+
+        <div className="home-recent-header">
+
+          <div>
+            <p>
+              RECENTLY ADDED
+            </p>
+
+            <h2>
+              New services on HelpIn
+            </h2>
+          </div>
+
+          <Link to="/recommendations">
+            View more →
+          </Link>
+
+        </div>
+
+
+        {servicesLoading ? (
+
+          <div className="home-recent-empty">
+            Loading services...
+          </div>
+
+        ) : recentServices.length === 0 ? (
+
+          <div className="home-recent-empty">
+            No services have been added yet.
+          </div>
+
+        ) : (
+
+          <div className="home-recent-grid">
+
+            {recentServices.map(
+              (service) => (
+
+                <Link
+                  key={service.id}
+                  to={`/services/${service.id}`}
+                  className="home-recent-card"
+                >
+
+                  <div className="home-recent-image">
+
+                    {service.imageUrl ? (
+                      <img
+                        src={service.imageUrl}
+                        alt={service.name}
+                      />
+                    ) : (
+                      <span>
+                        {service.category ===
+                        "Accommodation"
+                          ? "🏠"
+                          : "🍲"}
+                      </span>
+                    )}
+
+                  </div>
+
+
+                  <div className="home-recent-content">
+
+                    <span className="home-recent-category">
+                      {service.category}
+                    </span>
+
+                    <h3>
+                      {service.name}
+                    </h3>
+
+                    <p>
+                      {service.location}
+                      {service.serviceType
+                        ? ` · ${service.serviceType}`
+                        : ""}
+                    </p>
+
+                    <strong>
+                      View Details →
+                    </strong>
+
+                  </div>
+
+                </Link>
+              )
+            )}
+
+          </div>
+
+        )}
 
       </section>
 
