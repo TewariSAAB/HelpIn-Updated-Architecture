@@ -218,22 +218,6 @@ function response(statusCode, body) {
 }
 
 
-function publicContactResponse(statusCode, body) {
-  return {
-    statusCode,
-
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST,OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type"
-    },
-
-    body: JSON.stringify(body)
-  };
-}
-
-
 /*
 ============================================================
 Main Lambda Handler
@@ -278,7 +262,7 @@ exports.handler = async (event) => {
             ? JSON.parse(event.body)
             : {};
       } catch {
-        return publicContactResponse(400, {
+        return response(400, {
           message:
             "Request body must be valid JSON"
         });
@@ -309,14 +293,14 @@ exports.handler = async (event) => {
         );
 
       if (!reason || !message) {
-        return publicContactResponse(400, {
+        return response(400, {
           message:
             "Reason and message are required"
         });
       }
 
       if (!isValidEmail(email)) {
-        return publicContactResponse(400, {
+        return response(400, {
           message:
             "Please enter a valid email address"
         });
@@ -350,7 +334,7 @@ exports.handler = async (event) => {
           ]
         );
 
-      return publicContactResponse(201, {
+      return response(201, {
         message:
           "Your message has been sent to HelpIn.",
         id:
@@ -363,7 +347,7 @@ exports.handler = async (event) => {
         error
       );
 
-      return publicContactResponse(500, {
+      return response(500, {
         message:
           "Unable to send your message right now"
       });
