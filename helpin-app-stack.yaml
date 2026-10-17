@@ -1897,7 +1897,7 @@ Resources:
                 "'POST,OPTIONS'"
 
               method.response.header.Access-Control-Allow-Origin:
-                !Sub "'${CorsAllowedOrigin}'"
+                "'*'"
 
 
       MethodResponses:
@@ -2146,7 +2146,7 @@ Resources:
   # API Deployment
   ############################################################
 
-  HelpInApiDeploymentV6:
+  HelpInApiDeploymentV7:
     Type: AWS::ApiGateway::Deployment
 
     DependsOn:
@@ -2190,7 +2190,7 @@ Resources:
         !Ref HelpInApi
 
       Description:
-        HelpIn API deployment with service image upload and contact messages
+        HelpIn API deployment with service image upload and contact form CORS fix
 
 
   HelpInApiStage:
@@ -2204,7 +2204,7 @@ Resources:
         !Ref HelpInApi
 
       DeploymentId:
-        !Ref HelpInApiDeploymentV6
+        !Ref HelpInApiDeploymentV7
 
       Tags:
 
