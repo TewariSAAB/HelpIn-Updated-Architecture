@@ -1,46 +1,20 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
+import { getServices } from "../services/api";
 import "./Accommodation.css";
-
-
-const accommodationData = [
-  {
-    id: 1,
-    name: "Riverside Apartments",
-    location: "London",
-    price: 600,
-    propertyType: "Shared Room",
-    description:
-      "Affordable shared accommodation with useful transport links and essential local services.",
-    imageClass: "riverside-image",
-  },
-
-  {
-    id: 2,
-    name: "Maple House",
-    location: "Birmingham",
-    price: 450,
-    propertyType: "Shared Room",
-    description:
-      "Comfortable shared housing suitable for people looking for an affordable place to stay.",
-    imageClass: "maple-image",
-  },
-
-  {
-    id: 3,
-    name: "City Residences",
-    location: "Manchester",
-    price: 700,
-    propertyType: "Studio",
-    description:
-      "A private studio option with access to transport, shops and nearby community services.",
-    imageClass: "city-image",
-  },
-];
 
 
 function Accommodation() {
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const [accommodationData, setAccommodationData] =
+    useState([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [loadError, setLoadError] =
+    useState("");
 
   const [location, setLocation] = useState("");
   const [budget, setBudget] = useState("");
@@ -51,6 +25,79 @@ function Accommodation() {
     budget: "",
     propertyType: "",
   });
+
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadAccommodation() {
+      try {
+        setLoading(true);
+        setLoadError("");
+
+        const response =
+          await getServices();
+
+        const services =
+          Array.isArray(response)
+            ? response
+            : response?.services || [];
+
+        const accommodation =
+          services
+            .filter(
+              (service) =>
+                service.category ===
+                "Accommodation"
+            )
+            .map((service) => ({
+              id: service.id,
+              name: service.name || "",
+              location:
+                service.location || "",
+              price:
+                Number(service.price) || 0,
+              propertyType:
+                service.service_type ||
+                "Accommodation",
+              costType:
+                service.cost_type ||
+                "Per Month",
+              description:
+                service.description || "",
+              imageUrl:
+                service.image_url || "",
+            }));
+
+        if (active) {
+          setAccommodationData(
+            accommodation
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Unable to load accommodation:",
+          error
+        );
+
+        if (active) {
+          setLoadError(
+            "Unable to load accommodation right now."
+          );
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadAccommodation();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
 
   const closeMenu = () => {
@@ -592,7 +639,23 @@ function Accommodation() {
 
           {/* NO RESULTS */}
 
-          {filteredAccommodation.length === 0 ? (
+          {loading ? (
+
+            <div className="no-accommodation-results">
+              <h3>
+                Loading accommodation...
+              </h3>
+            </div>
+
+          ) : loadError ? (
+
+            <div className="no-accommodation-results">
+              <h3>
+                {loadError}
+              </h3>
+            </div>
+
+          ) : filteredAccommodation.length === 0 ? (
 
             <div className="no-accommodation-results">
 
@@ -631,18 +694,24 @@ function Accommodation() {
 
                   {/* IMAGE */}
 
-                  <div
-                    className={`accommodation-card-image ${item.imageClass}`}
-                  >
-                    <div className="building-illustration">
-                      <span className="building-main">
-                        🏢
-                      </span>
+                  <div className="accommodation-card-image">
+                    {item.imageUrl ? (
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        className="accommodation-uploaded-image"
+                      />
+                    ) : (
+                      <div className="building-illustration">
+                        <span className="building-main">
+                          🏢
+                        </span>
 
-                      <span className="building-home">
-                        🏠
-                      </span>
-                    </div>
+                        <span className="building-home">
+                          🏠
+                        </span>
+                      </div>
+                    )}
                   </div>
 
 
@@ -666,12 +735,24 @@ function Accommodation() {
 
                       <div className="accommodation-price desktop-card-price">
                         <strong>
-                          £{item.price}
+                          {item.costType === "Free" ||
+                          item.price === 0
+                            ? "Free"
+                            : `£${item.price}`}
                         </strong>
 
-                        <span>
-                          / month
-                        </span>
+                        {item.costType !== "Free" &&
+                          item.price !== 0 && (
+                            <span>
+                              {item.costType === "Per Month"
+                                ? "/ month"
+                                : item.costType === "Per Week"
+                                  ? "/ week"
+                                  : item.costType === "Per Day"
+                                    ? "/ day"
+                                    : item.costType}
+                            </span>
+                          )}
                       </div>
 
                     </div>
@@ -742,12 +823,24 @@ function Accommodation() {
 
                     <div className="accommodation-mobile-price">
                       <strong>
-                        £{item.price}
+                        {item.costType === "Free" ||
+                        item.price === 0
+                          ? "Free"
+                          : `£${item.price}`}
                       </strong>
 
-                      <span>
-                        / month
-                      </span>
+                      {item.costType !== "Free" &&
+                        item.price !== 0 && (
+                          <span>
+                            {item.costType === "Per Month"
+                              ? "/ month"
+                              : item.costType === "Per Week"
+                                ? "/ week"
+                                : item.costType === "Per Day"
+                                  ? "/ day"
+                                  : item.costType}
+                          </span>
+                        )}
                     </div>
 
 

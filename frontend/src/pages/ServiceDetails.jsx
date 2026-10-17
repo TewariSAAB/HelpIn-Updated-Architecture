@@ -1,128 +1,20 @@
-import { useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
+
 import {
   Link,
   NavLink,
   useParams,
 } from "react-router-dom";
 
+import {
+  getServiceById,
+  getServices,
+} from "../services/api";
+
 import "./ServiceDetails.css";
-
-
-const services = [
-  {
-    id: "1",
-    name: "Riverside Apartments",
-    category: "Accommodation",
-    location: "London",
-    price: "£600 / month",
-    serviceType: "Shared Room",
-    description:
-      "Affordable shared rooms with good transport links and essential amenities. Suitable for individuals and families.",
-    openingHours: "Mon - Fri: 9:00 - 17:00",
-    phone: "020 7123 4567",
-    address:
-      "123 Riverside Road, London, E1 6AN",
-    website: "https://www.example.org",
-    websiteLabel: "www.example.org",
-    icon: "🏢",
-    theme: "blue",
-  },
-
-  {
-    id: "2",
-    name: "Maple House",
-    category: "Accommodation",
-    location: "Birmingham",
-    price: "£450 / month",
-    serviceType: "Shared Room",
-    description:
-      "Affordable shared accommodation offering comfortable rooms with access to transport, shops and local community services.",
-    openingHours: "Mon - Fri: 9:00 - 17:00",
-    phone: "0121 555 0188",
-    address:
-      "45 Maple Street, Birmingham, B1 2AA",
-    website: "https://www.example.org",
-    websiteLabel: "www.example.org",
-    icon: "🏡",
-    theme: "blue",
-  },
-
-  {
-    id: "3",
-    name: "City Residences",
-    category: "Accommodation",
-    location: "Manchester",
-    price: "£700 / month",
-    serviceType: "Studio",
-    description:
-      "Private studio accommodation close to transport links and essential services in Manchester.",
-    openingHours: "Mon - Sat: 9:00 - 18:00",
-    phone: "0161 555 0244",
-    address:
-      "88 City Road, Manchester, M1 4AB",
-    website: "https://www.example.org",
-    websiteLabel: "www.example.org",
-    icon: "🏙️",
-    theme: "blue",
-  },
-
-  {
-    id: "4",
-    name: "Hope Community Food Bank",
-    category: "Food Support",
-    location: "London",
-    price: "Free",
-    serviceType: "Food Bank",
-    description:
-      "Provides free food parcels and essential groceries for individuals and families in need. Support is available to newcomers and local residents.",
-    openingHours: "Mon - Fri: 10:00 - 16:00",
-    phone: "020 1234 5678",
-    address:
-      "123 Community Street, London, E1 6AN",
-    website: "https://www.example.org",
-    websiteLabel: "www.example.org",
-    icon: "🥫",
-    theme: "green",
-  },
-
-  {
-    id: "5",
-    name: "St. Mary's Community Kitchen",
-    category: "Food Support",
-    location: "Birmingham",
-    price: "Free",
-    serviceType: "Community Kitchen",
-    description:
-      "A welcoming community kitchen providing prepared meals and local support for individuals and families.",
-    openingHours: "Mon - Sat: 11:00 - 18:00",
-    phone: "0121 555 0102",
-    address:
-      "21 St Mary's Road, Birmingham, B2 3CD",
-    website: "https://www.example.org",
-    websiteLabel: "www.example.org",
-    icon: "🍲",
-    theme: "green",
-  },
-
-  {
-    id: "6",
-    name: "Good Food Hub",
-    category: "Food Support",
-    location: "Leeds",
-    price: "Low Cost",
-    serviceType: "Discounted Food",
-    description:
-      "Affordable groceries and discounted food options helping people reduce everyday food costs.",
-    openingHours: "Mon - Sat: 9:00 - 18:00",
-    phone: "0113 555 0192",
-    address:
-      "60 Market Road, Leeds, LS1 4EF",
-    website: "https://www.example.org",
-    websiteLabel: "www.example.org",
-    icon: "🥗",
-    theme: "green",
-  },
-];
 
 
 function ServiceDetails() {
@@ -131,9 +23,128 @@ function ServiceDetails() {
   const [menuOpen, setMenuOpen] =
     useState(false);
 
-  const service = services.find(
-    (item) => item.id === id
-  );
+  const [service, setService] =
+    useState(null);
+
+  const [relatedServices, setRelatedServices] =
+    useState([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [loadError, setLoadError] =
+    useState("");
+
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadService() {
+      try {
+        setLoading(true);
+        setLoadError("");
+
+        const [
+          serviceResponse,
+          servicesResponse,
+        ] = await Promise.all([
+          getServiceById(id),
+          getServices(),
+        ]);
+
+        const rawService =
+          serviceResponse?.service ||
+          serviceResponse;
+
+        const allServices =
+          Array.isArray(servicesResponse)
+            ? servicesResponse
+            : servicesResponse?.services || [];
+
+        const formatService = (item) => ({
+          id: String(item.id),
+          name: item.name || "",
+          category:
+            item.category || "",
+          location:
+            item.location || "",
+          price:
+            item.cost_type === "Free" ||
+            Number(item.price) === 0
+              ? "Free"
+              : `£${item.price} ${item.cost_type || ""}`.trim(),
+          serviceType:
+            item.service_type || "",
+          description:
+            item.description || "",
+          openingHours:
+            item.opening_hours || "",
+          phone:
+            item.contact_number || "",
+          website:
+            item.website_url || "",
+          websiteLabel:
+            item.website_url
+              ? item.website_url.replace(
+                  /^https?:\/\//,
+                  ""
+                )
+              : "",
+          imageUrl:
+            item.image_url || "",
+          theme:
+            item.category === "Accommodation"
+              ? "blue"
+              : "green",
+          icon:
+            item.category === "Accommodation"
+              ? "🏠"
+              : "🍲",
+        });
+
+        if (active) {
+          const formatted =
+            formatService(rawService);
+
+          setService(formatted);
+
+          setRelatedServices(
+            allServices
+              .filter(
+                (item) =>
+                  item.category ===
+                    rawService.category &&
+                  String(item.id) !==
+                    String(rawService.id)
+              )
+              .slice(0, 3)
+              .map(formatService)
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Unable to load service:",
+          error
+        );
+
+        if (active) {
+          setLoadError(
+            "This service could not be loaded."
+          );
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadService();
+
+    return () => {
+      active = false;
+    };
+  }, [id]);
 
 
   const closeMenu = () => {
@@ -141,7 +152,21 @@ function ServiceDetails() {
   };
 
 
-  if (!service) {
+  if (loading) {
+    return (
+      <div className="details-not-found">
+        <div>
+          <span>⌛</span>
+          <h1>
+            Loading service...
+          </h1>
+        </div>
+      </div>
+    );
+  }
+
+
+  if (!service || loadError) {
     return (
       <div className="details-not-found">
 
@@ -153,7 +178,8 @@ function ServiceDetails() {
           </h1>
 
           <p>
-            This service could not be found.
+            {loadError ||
+              "This service could not be found."}
           </p>
 
           <Link to="/">
@@ -172,18 +198,9 @@ function ServiceDetails() {
       : "/food-support";
 
 
-  const relatedServices = services
-    .filter(
-      (item) =>
-        item.category === service.category &&
-        item.id !== service.id
-    )
-    .slice(0, 3);
-
-
   const directionsUrl =
     `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-      service.address
+      service.location
     )}`;
 
 
@@ -413,9 +430,17 @@ function ServiceDetails() {
             className={`details-service-image details-image-${service.theme}`}
           >
 
-            <div className="details-main-icon">
-              {service.icon}
-            </div>
+            {service.imageUrl ? (
+              <img
+                src={service.imageUrl}
+                alt={service.name}
+                className="details-uploaded-image"
+              />
+            ) : (
+              <div className="details-main-icon">
+                {service.icon}
+              </div>
+            )}
 
           </div>
 
@@ -553,11 +578,17 @@ function ServiceDetails() {
                     Contact Number
                   </span>
 
-                  <a
-                    href={`tel:${service.phone}`}
-                  >
-                    {service.phone}
-                  </a>
+                  {service.phone ? (
+                    <a
+                      href={`tel:${service.phone}`}
+                    >
+                      {service.phone}
+                    </a>
+                  ) : (
+                    <strong>
+                      Not provided
+                    </strong>
+                  )}
                 </div>
 
               </div>
@@ -590,11 +621,11 @@ function ServiceDetails() {
 
                 <div>
                   <span>
-                    Address
+                    Location
                   </span>
 
                   <strong>
-                    {service.address}
+                    {service.location}
                   </strong>
                 </div>
 
@@ -643,13 +674,19 @@ function ServiceDetails() {
                     Website
                   </span>
 
-                  <a
-                    href={service.website}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {service.websiteLabel}
-                  </a>
+                  {service.website ? (
+                    <a
+                      href={service.website}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {service.websiteLabel}
+                    </a>
+                  ) : (
+                    <strong>
+                      Not provided
+                    </strong>
+                  )}
                 </div>
 
               </div>
@@ -690,15 +727,16 @@ function ServiceDetails() {
               </a>
 
 
-              <a
-                href={service.website}
-                target="_blank"
-                rel="noreferrer"
-                className="details-website-button"
-              >
-                Visit Website
+              {service.website && (
+                <a
+                  href={service.website}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="details-website-button"
+                >
+                  Visit Website
 
-                <svg
+                  <svg
                   viewBox="0 0 24 24"
                   fill="none"
                 >
@@ -721,9 +759,10 @@ function ServiceDetails() {
                     stroke="currentColor"
                     strokeWidth="2"
                   />
-                </svg>
+                  </svg>
 
-              </a>
+                </a>
+              )}
 
             </div>
 
@@ -773,9 +812,17 @@ function ServiceDetails() {
                 <div
                   className={`details-related-image details-related-${item.theme}`}
                 >
-                  <span>
-                    {item.icon}
-                  </span>
+                  {item.imageUrl ? (
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      className="details-related-uploaded-image"
+                    />
+                  ) : (
+                    <span>
+                      {item.icon}
+                    </span>
+                  )}
                 </div>
 
 

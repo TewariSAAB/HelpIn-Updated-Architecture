@@ -1,42 +1,19 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
+import { getServices } from "../services/api";
 import "./FoodSupport.css";
-
-const foodSupportData = [
-  {
-    id: 4,
-    name: "Hope Community Food Bank",
-    location: "London",
-    serviceType: "Food Bank",
-    cost: "Free",
-    description:
-      "Provides essential food parcels and everyday groceries for individuals and families who need support.",
-    icon: "🥫",
-  },
-  {
-    id: 5,
-    name: "St. Mary's Community Kitchen",
-    location: "Birmingham",
-    serviceType: "Community Kitchen",
-    cost: "Free",
-    description:
-      "A welcoming community kitchen providing prepared meals and local support in a friendly environment.",
-    icon: "🍲",
-  },
-  {
-    id: 6,
-    name: "Good Food Hub",
-    location: "Leeds",
-    serviceType: "Discounted Food",
-    cost: "Low Cost",
-    description:
-      "Find affordable food and discounted grocery options designed to help reduce everyday food costs.",
-    icon: "🥗",
-  },
-];
 
 function FoodSupport() {
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const [foodSupportData, setFoodSupportData] =
+    useState([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [loadError, setLoadError] =
+    useState("");
 
   const [location, setLocation] = useState("");
   const [serviceType, setServiceType] = useState("");
@@ -45,6 +22,81 @@ function FoodSupport() {
     location: "",
     serviceType: "",
   });
+
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadFoodSupport() {
+      try {
+        setLoading(true);
+        setLoadError("");
+
+        const response =
+          await getServices();
+
+        const services =
+          Array.isArray(response)
+            ? response
+            : response?.services || [];
+
+        const foodServices =
+          services
+            .filter(
+              (service) =>
+                service.category ===
+                "Food Support"
+            )
+            .map((service) => ({
+              id: service.id,
+              name: service.name || "",
+              location:
+                service.location || "",
+              serviceType:
+                service.service_type ||
+                "Food Support",
+              cost:
+                service.cost_type === "Free" ||
+                Number(service.price) === 0
+                  ? "Free"
+                  : service.cost_type ||
+                    ("£" + service.price),
+              description:
+                service.description || "",
+              imageUrl:
+                service.image_url || "",
+            }));
+
+        if (active) {
+          setFoodSupportData(
+            foodServices
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Unable to load food support:",
+          error
+        );
+
+        if (active) {
+          setLoadError(
+            "Unable to load food support right now."
+          );
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadFoodSupport();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
 
   const closeMenu = () => {
     setMenuOpen(false);
@@ -474,7 +526,23 @@ function FoodSupport() {
           </div>
 
 
-          {filteredServices.length === 0 ? (
+          {loading ? (
+
+            <div className="food-no-results">
+              <h3>
+                Loading food support...
+              </h3>
+            </div>
+
+          ) : loadError ? (
+
+            <div className="food-no-results">
+              <h3>
+                {loadError}
+              </h3>
+            </div>
+
+          ) : filteredServices.length === 0 ? (
 
             <div className="food-no-results">
 
@@ -515,9 +583,17 @@ function FoodSupport() {
 
                   <div className="food-card-image">
 
-                    <div className="food-card-icon">
-                      {service.icon}
-                    </div>
+                    {service.imageUrl ? (
+                      <img
+                        src={service.imageUrl}
+                        alt={service.name}
+                        className="food-uploaded-image"
+                      />
+                    ) : (
+                      <div className="food-card-icon">
+                        🍲
+                      </div>
+                    )}
 
                   </div>
 
