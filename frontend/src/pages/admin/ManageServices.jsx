@@ -1019,6 +1019,24 @@ function ManageServices() {
 
 
             <NavLink
+              to="/admin/contact-messages"
+              className={({ isActive }) =>
+                `services-sidebar-link ${
+                  isActive
+                    ? "active"
+                    : ""
+                }`
+              }
+            >
+
+              <span>✉</span>
+
+              Contact Messages
+
+            </NavLink>
+
+
+            <NavLink
               to="/admin/logs"
               className={({ isActive }) =>
                 `services-sidebar-link ${
