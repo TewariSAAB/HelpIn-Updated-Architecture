@@ -19,6 +19,7 @@ const secretsClient = new SecretsManagerClient({});
 const s3Client = new S3Client({});
 
 
+// The assets bucket is private, so service images are returned with temporary URLs.
 async function addSignedServiceImage(service) {
   const storedImage =
     service?.image_url;
