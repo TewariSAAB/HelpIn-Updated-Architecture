@@ -205,13 +205,7 @@ exports.handler = async (event) => {
   }
 
 
-  /*
-  ----------------------------------------------------------
-  Create a short-lived S3 upload URL for service images.
-  POST /admin/service-image-upload
-  ----------------------------------------------------------
-  */
-
+  // Generate a short-lived upload URL for an admin-selected service image.
   const uploadPath =
     event.resource ||
     event.path ||
