@@ -1247,9 +1247,9 @@ function Home() {
           </h4>
 
 
-          <p>
+          <Link to="/contact">
             Contact HelpIn
-          </p>
+          </Link>
 
 
           <p>

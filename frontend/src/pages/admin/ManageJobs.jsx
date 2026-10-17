@@ -833,6 +833,24 @@ function ManageJobs() {
 
 
             <NavLink
+              to="/admin/contact-messages"
+              className={({ isActive }) =>
+                `jobs-sidebar-link ${
+                  isActive
+                    ? "active"
+                    : ""
+                }`
+              }
+            >
+
+              <span>✉</span>
+
+              Contact Messages
+
+            </NavLink>
+
+
+            <NavLink
               to="/admin/logs"
               className={({ isActive }) =>
                 `jobs-sidebar-link ${

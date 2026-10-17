@@ -450,6 +450,53 @@ export async function getRecommendations(
 
 
 /* ======================================================
+   CONTACT
+====================================================== */
+
+export async function sendContactMessage(
+  message
+) {
+  return apiRequest(
+    "/contact",
+    {
+      method: "POST",
+      body: message,
+    }
+  );
+}
+
+
+export async function getContactMessages() {
+  return apiRequest(
+    "/admin/contact-messages",
+    {
+      method: "GET",
+      auth: true,
+    }
+  );
+}
+
+
+export async function updateContactMessageStatus(
+  id,
+  status
+) {
+  return apiRequest(
+    `/admin/contact-messages/${encodeURIComponent(
+      id
+    )}`,
+    {
+      method: "PUT",
+      auth: true,
+      body: {
+        status,
+      },
+    }
+  );
+}
+
+
+/* ======================================================
    REAL ADMIN EVENT LOGS
 ====================================================== */
 

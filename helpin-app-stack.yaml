@@ -861,6 +861,20 @@ Resources:
         recommendations
 
 
+  ContactResource:
+    Type: AWS::ApiGateway::Resource
+
+    Properties:
+      RestApiId:
+        !Ref HelpInApi
+
+      ParentId:
+        !GetAtt HelpInApi.RootResourceId
+
+      PathPart:
+        contact
+
+
   AdminResource:
     Type: AWS::ApiGateway::Resource
 
@@ -901,6 +915,34 @@ Resources:
 
       PathPart:
         service-image-upload
+
+
+  AdminContactMessagesResource:
+    Type: AWS::ApiGateway::Resource
+
+    Properties:
+      RestApiId:
+        !Ref HelpInApi
+
+      ParentId:
+        !Ref AdminResource
+
+      PathPart:
+        contact-messages
+
+
+  AdminContactMessageIdResource:
+    Type: AWS::ApiGateway::Resource
+
+    Properties:
+      RestApiId:
+        !Ref HelpInApi
+
+      ParentId:
+        !Ref AdminContactMessagesResource
+
+      PathPart:
+        '{id}'
 
 
   ############################################################
@@ -1053,6 +1095,34 @@ Resources:
           !Sub 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${RecommendationFunction.Arn}/invocations'
 
 
+  ContactPostMethod:
+    Type: AWS::ApiGateway::Method
+
+    Properties:
+      RestApiId:
+        !Ref HelpInApi
+
+      ResourceId:
+        !Ref ContactResource
+
+      HttpMethod:
+        POST
+
+      AuthorizationType:
+        NONE
+
+      Integration:
+
+        Type:
+          AWS_PROXY
+
+        IntegrationHttpMethod:
+          POST
+
+        Uri:
+          !Sub 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AdminFunction.Arn}/invocations'
+
+
   ############################################################
   # Protected Admin GET
   ############################################################
@@ -1086,6 +1156,71 @@ Resources:
 
         Uri:
           !Sub 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${EventProcessorFunction.Arn}/invocations'
+
+
+  AdminContactMessagesGetMethod:
+    Type: AWS::ApiGateway::Method
+
+    Properties:
+      RestApiId:
+        !Ref HelpInApi
+
+      ResourceId:
+        !Ref AdminContactMessagesResource
+
+      HttpMethod:
+        GET
+
+      AuthorizationType:
+        COGNITO_USER_POOLS
+
+      AuthorizerId:
+        !Ref HelpInCognitoAuthorizer
+
+      Integration:
+
+        Type:
+          AWS_PROXY
+
+        IntegrationHttpMethod:
+          POST
+
+        Uri:
+          !Sub 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AdminFunction.Arn}/invocations'
+
+
+  AdminContactMessageIdPutMethod:
+    Type: AWS::ApiGateway::Method
+
+    Properties:
+      RestApiId:
+        !Ref HelpInApi
+
+      ResourceId:
+        !Ref AdminContactMessageIdResource
+
+      HttpMethod:
+        PUT
+
+      AuthorizationType:
+        COGNITO_USER_POOLS
+
+      AuthorizerId:
+        !Ref HelpInCognitoAuthorizer
+
+      RequestParameters:
+        method.request.path.id: true
+
+      Integration:
+
+        Type:
+          AWS_PROXY
+
+        IntegrationHttpMethod:
+          POST
+
+        Uri:
+          !Sub 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AdminFunction.Arn}/invocations'
 
 
   ############################################################
@@ -1725,6 +1860,174 @@ Resources:
               true
 
 
+  ContactOptionsMethod:
+    Type: AWS::ApiGateway::Method
+
+    Properties:
+      RestApiId:
+        !Ref HelpInApi
+
+      ResourceId:
+        !Ref ContactResource
+
+      HttpMethod:
+        OPTIONS
+
+      AuthorizationType:
+        NONE
+
+      Integration:
+
+        Type:
+          MOCK
+
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+
+        IntegrationResponses:
+
+          - StatusCode: '200'
+
+            ResponseParameters:
+
+              method.response.header.Access-Control-Allow-Headers:
+                "'Content-Type,Authorization'"
+
+              method.response.header.Access-Control-Allow-Methods:
+                "'POST,OPTIONS'"
+
+              method.response.header.Access-Control-Allow-Origin:
+                !Sub "'${CorsAllowedOrigin}'"
+
+
+      MethodResponses:
+
+        - StatusCode: '200'
+
+          ResponseParameters:
+
+            method.response.header.Access-Control-Allow-Headers:
+              true
+
+            method.response.header.Access-Control-Allow-Methods:
+              true
+
+            method.response.header.Access-Control-Allow-Origin:
+              true
+
+
+  AdminContactMessagesOptionsMethod:
+    Type: AWS::ApiGateway::Method
+
+    Properties:
+      RestApiId:
+        !Ref HelpInApi
+
+      ResourceId:
+        !Ref AdminContactMessagesResource
+
+      HttpMethod:
+        OPTIONS
+
+      AuthorizationType:
+        NONE
+
+      Integration:
+
+        Type:
+          MOCK
+
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+
+        IntegrationResponses:
+
+          - StatusCode: '200'
+
+            ResponseParameters:
+
+              method.response.header.Access-Control-Allow-Headers:
+                "'Content-Type,Authorization'"
+
+              method.response.header.Access-Control-Allow-Methods:
+                "'GET,OPTIONS'"
+
+              method.response.header.Access-Control-Allow-Origin:
+                !Sub "'${CorsAllowedOrigin}'"
+
+
+      MethodResponses:
+
+        - StatusCode: '200'
+
+          ResponseParameters:
+
+            method.response.header.Access-Control-Allow-Headers:
+              true
+
+            method.response.header.Access-Control-Allow-Methods:
+              true
+
+            method.response.header.Access-Control-Allow-Origin:
+              true
+
+
+  AdminContactMessageIdOptionsMethod:
+    Type: AWS::ApiGateway::Method
+
+    Properties:
+      RestApiId:
+        !Ref HelpInApi
+
+      ResourceId:
+        !Ref AdminContactMessageIdResource
+
+      HttpMethod:
+        OPTIONS
+
+      AuthorizationType:
+        NONE
+
+      Integration:
+
+        Type:
+          MOCK
+
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+
+        IntegrationResponses:
+
+          - StatusCode: '200'
+
+            ResponseParameters:
+
+              method.response.header.Access-Control-Allow-Headers:
+                "'Content-Type,Authorization'"
+
+              method.response.header.Access-Control-Allow-Methods:
+                "'PUT,OPTIONS'"
+
+              method.response.header.Access-Control-Allow-Origin:
+                !Sub "'${CorsAllowedOrigin}'"
+
+
+      MethodResponses:
+
+        - StatusCode: '200'
+
+          ResponseParameters:
+
+            method.response.header.Access-Control-Allow-Headers:
+              true
+
+            method.response.header.Access-Control-Allow-Methods:
+              true
+
+            method.response.header.Access-Control-Allow-Origin:
+              true
+
+
   ############################################################
   # API Gateway Error CORS
   ############################################################
@@ -1843,7 +2146,7 @@ Resources:
   # API Deployment
   ############################################################
 
-  HelpInApiDeploymentV5:
+  HelpInApiDeploymentV6:
     Type: AWS::ApiGateway::Deployment
 
     DependsOn:
@@ -1855,6 +2158,7 @@ Resources:
       - JobIdGetMethod
 
       - RecommendationsGetMethod
+      - ContactPostMethod
 
       - ServicesPostMethod
       - ServiceIdPutMethod
@@ -1866,14 +2170,19 @@ Resources:
 
       - AdminLogsGetMethod
       - AdminServiceImageUploadPostMethod
+      - AdminContactMessagesGetMethod
+      - AdminContactMessageIdPutMethod
 
       - ServicesOptionsMethod
       - ServiceIdOptionsMethod
       - JobsOptionsMethod
       - JobIdOptionsMethod
       - RecommendationsOptionsMethod
+      - ContactOptionsMethod
       - AdminLogsOptionsMethod
       - AdminServiceImageUploadOptionsMethod
+      - AdminContactMessagesOptionsMethod
+      - AdminContactMessageIdOptionsMethod
 
     Properties:
 
@@ -1881,7 +2190,7 @@ Resources:
         !Ref HelpInApi
 
       Description:
-        HelpIn API deployment with protected event logs and service image upload
+        HelpIn API deployment with service image upload and contact messages
 
 
   HelpInApiStage:
@@ -1895,7 +2204,7 @@ Resources:
         !Ref HelpInApi
 
       DeploymentId:
-        !Ref HelpInApiDeploymentV5
+        !Ref HelpInApiDeploymentV6
 
       Tags:
 

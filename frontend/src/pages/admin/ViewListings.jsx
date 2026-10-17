@@ -460,6 +460,24 @@ function ViewListings() {
 
 
             <NavLink
+              to="/admin/contact-messages"
+              className={({ isActive }) =>
+                `listings-sidebar-link ${
+                  isActive
+                    ? "active"
+                    : ""
+                }`
+              }
+            >
+
+              <span>✉</span>
+
+              Contact Messages
+
+            </NavLink>
+
+
+            <NavLink
               to="/admin/logs"
               className={({ isActive }) =>
                 `listings-sidebar-link ${

@@ -337,6 +337,26 @@ function AdminResponsiveShell({
 
 
           <NavLink
+            to="/admin/contact-messages"
+            className={({
+              isActive,
+            }) =>
+              `responsive-drawer-link ${
+                isActive
+                  ? "active"
+                  : ""
+              }`
+            }
+          >
+            <span>
+              ✉
+            </span>
+
+            Contact Messages
+          </NavLink>
+
+
+          <NavLink
             to="/admin/logs"
             className={({
               isActive,

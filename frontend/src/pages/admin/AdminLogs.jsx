@@ -707,6 +707,24 @@ function AdminLogs() {
 
 
             <NavLink
+              to="/admin/contact-messages"
+              className={({ isActive }) =>
+                `logs-sidebar-link ${
+                  isActive
+                    ? "active"
+                    : ""
+                }`
+              }
+            >
+
+              <span>✉</span>
+
+              Contact Messages
+
+            </NavLink>
+
+
+            <NavLink
               to="/admin/logs"
               className={({ isActive }) =>
                 `logs-sidebar-link ${

@@ -69,6 +69,45 @@ async function getDatabaseConnection() {
 }
 
 
+async function ensureContactMessagesTable(connection) {
+  await connection.execute(
+    `
+    CREATE TABLE IF NOT EXISTS contact_messages
+    (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+      reason VARCHAR(80) NOT NULL,
+      name VARCHAR(100) NULL,
+      email VARCHAR(254) NULL,
+      message TEXT NOT NULL,
+      status VARCHAR(20) NOT NULL DEFAULT 'New',
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (id),
+      INDEX idx_contact_status (status),
+      INDEX idx_contact_created_at (created_at)
+    )
+    `
+  );
+}
+
+
+function cleanText(value, maxLength) {
+  return String(value || "")
+    .trim()
+    .slice(0, maxLength);
+}
+
+
+function isValidEmail(email) {
+  if (!email) {
+    return true;
+  }
+
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+
 /*
 ============================================================
 Admin Authorization
@@ -187,10 +226,139 @@ Main Lambda Handler
 
 exports.handler = async (event) => {
 
+  const requestMethod =
+    event.httpMethod || "";
+
+  const requestPath =
+    event.resource ||
+    event.path ||
+    "";
+
   console.log(
-    "Admin request:",
-    JSON.stringify(event, null, 2)
+    "Admin function request:",
+    requestMethod,
+    requestPath
   );
+
+
+  /*
+  ----------------------------------------------------------
+  Public contact form
+  ----------------------------------------------------------
+  */
+
+  if (
+    requestMethod === "POST" &&
+    requestPath === "/contact"
+  ) {
+    let contactConnection;
+
+    try {
+      let contactBody = {};
+
+      try {
+        contactBody =
+          event.body
+            ? JSON.parse(event.body)
+            : {};
+      } catch {
+        return response(400, {
+          message:
+            "Request body must be valid JSON"
+        });
+      }
+
+      const reason =
+        cleanText(
+          contactBody.reason,
+          80
+        );
+
+      const name =
+        cleanText(
+          contactBody.name,
+          100
+        );
+
+      const email =
+        cleanText(
+          contactBody.email,
+          254
+        ).toLowerCase();
+
+      const message =
+        cleanText(
+          contactBody.message,
+          2000
+        );
+
+      if (!reason || !message) {
+        return response(400, {
+          message:
+            "Reason and message are required"
+        });
+      }
+
+      if (!isValidEmail(email)) {
+        return response(400, {
+          message:
+            "Please enter a valid email address"
+        });
+      }
+
+      contactConnection =
+        await getDatabaseConnection();
+
+      await ensureContactMessagesTable(
+        contactConnection
+      );
+
+      const [result] =
+        await contactConnection.execute(
+          `
+          INSERT INTO contact_messages
+          (
+            reason,
+            name,
+            email,
+            message,
+            status
+          )
+          VALUES (?, ?, ?, ?, 'New')
+          `,
+          [
+            reason,
+            name || null,
+            email || null,
+            message
+          ]
+        );
+
+      return response(201, {
+        message:
+          "Your message has been sent to HelpIn.",
+        id:
+          result.insertId
+      });
+
+    } catch (error) {
+      console.error(
+        "Contact form error:",
+        error
+      );
+
+      return response(500, {
+        message:
+          "Unable to send your message right now"
+      });
+
+    } finally {
+      if (contactConnection) {
+        await contactConnection.end();
+      }
+    }
+  }
+
 
   /*
   ----------------------------------------------------------
@@ -207,9 +375,7 @@ exports.handler = async (event) => {
 
   // Generate a short-lived upload URL for an admin-selected service image.
   const uploadPath =
-    event.resource ||
-    event.path ||
-    "";
+    requestPath;
 
   if (
     event.httpMethod === "POST" &&
@@ -310,10 +476,10 @@ exports.handler = async (event) => {
 
 
     const method =
-      event.httpMethod;
+      requestMethod;
 
     const path =
-      event.resource || event.path || "";
+      requestPath;
 
     const id =
       event.pathParameters?.id;
@@ -322,6 +488,126 @@ exports.handler = async (event) => {
       event.body
         ? JSON.parse(event.body)
         : {};
+
+
+    /*
+    ========================================================
+    CONTACT MESSAGES
+    ========================================================
+    */
+
+    if (
+      path.includes(
+        "/admin/contact-messages"
+      )
+    ) {
+      await ensureContactMessagesTable(
+        connection
+      );
+
+      if (
+        method === "GET" &&
+        !id
+      ) {
+        const [messages] =
+          await connection.execute(
+            `
+            SELECT
+              id,
+              reason,
+              name,
+              email,
+              message,
+              status,
+              created_at,
+              updated_at
+            FROM contact_messages
+            ORDER BY created_at DESC
+            LIMIT 200
+            `
+          );
+
+        return response(200, {
+          count:
+            messages.length,
+          messages
+        });
+      }
+
+      if (
+        method === "PUT" &&
+        id
+      ) {
+        const nextStatus =
+          cleanText(
+            body.status,
+            20
+          );
+
+        const allowedStatuses = [
+          "New",
+          "Reviewed",
+          "Resolved"
+        ];
+
+        if (
+          !allowedStatuses.includes(
+            nextStatus
+          )
+        ) {
+          return response(400, {
+            message:
+              "Status must be New, Reviewed or Resolved"
+          });
+        }
+
+        const [result] =
+          await connection.execute(
+            `
+            UPDATE contact_messages
+            SET status = ?
+            WHERE id = ?
+            `,
+            [
+              nextStatus,
+              id
+            ]
+          );
+
+        if (
+          result.affectedRows === 0
+        ) {
+          return response(404, {
+            message:
+              "Contact message not found"
+          });
+        }
+
+        const [[contactMessage]] =
+          await connection.execute(
+            `
+            SELECT
+              id,
+              reason,
+              name,
+              email,
+              message,
+              status,
+              created_at,
+              updated_at
+            FROM contact_messages
+            WHERE id = ?
+            `,
+            [id]
+          );
+
+        return response(200, {
+          message:
+            "Contact message updated successfully",
+          contactMessage
+        });
+      }
+    }
 
 
     /*

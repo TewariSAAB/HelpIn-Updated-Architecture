@@ -919,9 +919,9 @@ function ServiceDetails() {
             Accessibility
           </span>
 
-          <span>
+          <Link to="/contact">
             Contact HelpIn
-          </span>
+          </Link>
 
         </div>
 
