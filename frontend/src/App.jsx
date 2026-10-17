@@ -1,7 +1,12 @@
 import {
   Routes,
   Route,
+  useLocation,
 } from "react-router-dom";
+
+import {
+  useLayoutEffect,
+} from "react";
 
 
 /* ======================================================
@@ -76,6 +81,55 @@ import AdminResponsiveShell
 
 
 /* ======================================================
+   RESET SCROLL ON ROUTE CHANGE
+====================================================== */
+
+function ScrollToTop() {
+  const location =
+    useLocation();
+
+  useLayoutEffect(() => {
+    if (
+      "scrollRestoration" in
+      window.history
+    ) {
+      window.history.scrollRestoration =
+        "manual";
+    }
+
+    document.documentElement.scrollTop =
+      0;
+
+    document.body.scrollTop =
+      0;
+
+    window.scrollTo(
+      0,
+      0
+    );
+
+    const frame =
+      window.requestAnimationFrame(
+        () => {
+          window.scrollTo(
+            0,
+            0
+          );
+        }
+      );
+
+    return () => {
+      window.cancelAnimationFrame(
+        frame
+      );
+    };
+  }, [location.pathname]);
+
+  return null;
+}
+
+
+/* ======================================================
    ADMIN PAGE WRAPPER
 ====================================================== */
 
@@ -98,7 +152,11 @@ function ProtectedAdminPage({
 
 function App() {
   return (
-    <Routes>
+    <>
+
+      <ScrollToTop />
+
+      <Routes>
 
       {/* ==================================================
           PUBLIC
@@ -283,7 +341,9 @@ function App() {
         }
       />
 
-    </Routes>
+      </Routes>
+
+    </>
   );
 }
 
