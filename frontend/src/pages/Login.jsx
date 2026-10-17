@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   Link,
@@ -80,6 +80,15 @@ function HelpInLogo({
 
 function Login() {
   const navigate = useNavigate();
+
+
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "auto",
+    });
+  }, []);
 
   const [
     mode,
