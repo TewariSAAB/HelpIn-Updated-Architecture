@@ -103,6 +103,7 @@ jobs:
             --capabilities CAPABILITY_NAMED_IAM \
             --parameter-overrides \
               CoreStackName=helpin-core-stack \
+              CorsAllowedOrigin=https://main.d9xfmagw49mex.amplifyapp.com \
               SearchFunctionS3Key=${{ steps.upload.outputs.s3_prefix }}/search-function.zip \
               AdminFunctionS3Key=${{ steps.upload.outputs.s3_prefix }}/admin-function.zip \
               RecommendationFunctionS3Key=${{ steps.upload.outputs.s3_prefix }}/recommendation-function.zip \
