@@ -495,10 +495,7 @@ function ManageServices() {
     };
 
 
-  /* ======================================================
-     IMAGE CHANGE
-  ====================================================== */
-
+  // Validate the selected image locally before it is uploaded.
   const handleImageChange =
     (event) => {
       const file =
@@ -1991,7 +1988,7 @@ function ManageServices() {
                 </div>
 
 
-                {/* SERVICE IMAGE */}
+                {/* Optional image for the service listing */}
 
                 <div className="services-form-field full">
 
