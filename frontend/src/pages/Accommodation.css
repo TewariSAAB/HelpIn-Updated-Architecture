@@ -693,6 +693,17 @@ input::-webkit-outer-spin-button {
 }
 
 
+.accommodation-uploaded-image {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+}
+
+
+
 /* ======================================================
    CARD CONTENT
 ====================================================== */
