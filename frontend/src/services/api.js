@@ -243,10 +243,7 @@ export async function deleteService(
 }
 
 
-/* ======================================================
-   SERVICE IMAGE UPLOAD
-====================================================== */
-
+// Request a signed upload URL, then send the image directly to S3.
 export async function uploadServiceImage(
   file
 ) {
