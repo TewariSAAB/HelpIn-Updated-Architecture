@@ -5,7 +5,80 @@ const {
   GetSecretValueCommand
 } = require("@aws-sdk/client-secrets-manager");
 
+const {
+  S3Client,
+  GetObjectCommand
+} = require("@aws-sdk/client-s3");
+
+const {
+  getSignedUrl
+} = require("@aws-sdk/s3-request-presigner");
+
+
 const secretsClient = new SecretsManagerClient({});
+const s3Client = new S3Client({});
+
+
+// The assets bucket is private, so service images are returned with temporary URLs.
+async function addSignedServiceImage(service) {
+  const storedImage =
+    service?.image_url;
+
+  if (!storedImage) {
+    return {
+      ...service,
+      image_key: null,
+      image_url: null
+    };
+  }
+
+  if (
+    /^https?:\/\//i.test(
+      String(storedImage)
+    )
+  ) {
+    return {
+      ...service,
+      image_key: null,
+      image_url: storedImage
+    };
+  }
+
+  try {
+    const imageUrl =
+      await getSignedUrl(
+        s3Client,
+        new GetObjectCommand({
+          Bucket:
+            process.env.ASSETS_BUCKET,
+          Key:
+            storedImage
+        }),
+        {
+          expiresIn: 3600
+        }
+      );
+
+    return {
+      ...service,
+      image_key: storedImage,
+      image_url: imageUrl
+    };
+
+  } catch (error) {
+    console.error(
+      "Unable to sign service image:",
+      storedImage,
+      error
+    );
+
+    return {
+      ...service,
+      image_key: storedImage,
+      image_url: null
+    };
+  }
+}
 
 async function getDatabaseCredentials() {
   const response = await secretsClient.send(
@@ -211,6 +284,13 @@ exports.handler = async (event) => {
 
       const [services] = await connection.execute(sql, values);
 
+      const servicesWithImages =
+        await Promise.all(
+          services.map(
+            addSignedServiceImage
+          )
+        );
+
       if (id && services.length === 0) {
         return response(
           404,
@@ -225,7 +305,7 @@ exports.handler = async (event) => {
         return response(
           200,
           {
-            service: services[0]
+            service: servicesWithImages[0]
           },
           origin
         );
@@ -234,8 +314,8 @@ exports.handler = async (event) => {
       return response(
         200,
         {
-          count: services.length,
-          services
+          count: servicesWithImages.length,
+          services: servicesWithImages
         },
         origin
       );

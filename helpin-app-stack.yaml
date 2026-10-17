@@ -889,6 +889,20 @@ Resources:
         logs
 
 
+  AdminServiceImageUploadResource:
+    Type: AWS::ApiGateway::Resource
+
+    Properties:
+      RestApiId:
+        !Ref HelpInApi
+
+      ParentId:
+        !Ref AdminResource
+
+      PathPart:
+        service-image-upload
+
+
   ############################################################
   # Public GET Methods
   ############################################################
@@ -1164,6 +1178,41 @@ Resources:
 
       RequestParameters:
         method.request.path.id: true
+
+      Integration:
+
+        Type:
+          AWS_PROXY
+
+        IntegrationHttpMethod:
+          POST
+
+        Uri:
+          !Sub 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AdminFunction.Arn}/invocations'
+
+
+  ############################################################
+  # Protected Service Image Upload
+  ############################################################
+
+  AdminServiceImageUploadPostMethod:
+    Type: AWS::ApiGateway::Method
+
+    Properties:
+      RestApiId:
+        !Ref HelpInApi
+
+      ResourceId:
+        !Ref AdminServiceImageUploadResource
+
+      HttpMethod:
+        POST
+
+      AuthorizationType:
+        COGNITO_USER_POOLS
+
+      AuthorizerId:
+        !Ref HelpInCognitoAuthorizer
 
       Integration:
 
@@ -1620,6 +1669,62 @@ Resources:
               true
 
 
+  AdminServiceImageUploadOptionsMethod:
+    Type: AWS::ApiGateway::Method
+
+    Properties:
+      RestApiId:
+        !Ref HelpInApi
+
+      ResourceId:
+        !Ref AdminServiceImageUploadResource
+
+      HttpMethod:
+        OPTIONS
+
+      AuthorizationType:
+        NONE
+
+      Integration:
+
+        Type:
+          MOCK
+
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+
+        IntegrationResponses:
+
+          - StatusCode: '200'
+
+            ResponseParameters:
+
+              method.response.header.Access-Control-Allow-Headers:
+                "'Content-Type,Authorization'"
+
+              method.response.header.Access-Control-Allow-Methods:
+                "'POST,OPTIONS'"
+
+              method.response.header.Access-Control-Allow-Origin:
+                !Sub "'${CorsAllowedOrigin}'"
+
+
+      MethodResponses:
+
+        - StatusCode: '200'
+
+          ResponseParameters:
+
+            method.response.header.Access-Control-Allow-Headers:
+              true
+
+            method.response.header.Access-Control-Allow-Methods:
+              true
+
+            method.response.header.Access-Control-Allow-Origin:
+              true
+
+
   ############################################################
   # API Gateway Error CORS
   ############################################################
@@ -1738,7 +1843,7 @@ Resources:
   # API Deployment
   ############################################################
 
-  HelpInApiDeploymentV4:
+  HelpInApiDeploymentV5:
     Type: AWS::ApiGateway::Deployment
 
     DependsOn:
@@ -1760,6 +1865,7 @@ Resources:
       - JobIdDeleteMethod
 
       - AdminLogsGetMethod
+      - AdminServiceImageUploadPostMethod
 
       - ServicesOptionsMethod
       - ServiceIdOptionsMethod
@@ -1767,6 +1873,7 @@ Resources:
       - JobIdOptionsMethod
       - RecommendationsOptionsMethod
       - AdminLogsOptionsMethod
+      - AdminServiceImageUploadOptionsMethod
 
     Properties:
 
@@ -1774,7 +1881,7 @@ Resources:
         !Ref HelpInApi
 
       Description:
-        HelpIn API deployment with protected real event log endpoint
+        HelpIn API deployment with protected event logs and service image upload
 
 
   HelpInApiStage:
@@ -1788,7 +1895,7 @@ Resources:
         !Ref HelpInApi
 
       DeploymentId:
-        !Ref HelpInApiDeploymentV4
+        !Ref HelpInApiDeploymentV5
 
       Tags:
 

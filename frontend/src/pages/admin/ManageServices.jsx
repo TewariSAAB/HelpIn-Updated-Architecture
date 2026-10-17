@@ -17,6 +17,7 @@ import {
   deleteService,
   getServices,
   updateService,
+  uploadServiceImage,
 } from "../../services/api";
 
 import {
@@ -36,6 +37,8 @@ const emptyForm = {
   contactNumber: "",
   websiteUrl: "",
   openingHours: "",
+  imageKey: "",
+  imageUrl: "",
 };
 
 
@@ -84,6 +87,32 @@ function ManageServices() {
 
   const [form, setForm] =
     useState(emptyForm);
+
+  const [
+    selectedImage,
+    setSelectedImage,
+  ] = useState(null);
+
+  const [
+    imagePreview,
+    setImagePreview,
+  ] = useState("");
+
+
+  useEffect(() => {
+    return () => {
+      if (
+        imagePreview &&
+        imagePreview.startsWith(
+          "blob:"
+        )
+      ) {
+        URL.revokeObjectURL(
+          imagePreview
+        );
+      }
+    };
+  }, [imagePreview]);
 
 
   /* ======================================================
@@ -180,6 +209,16 @@ function ManageServices() {
       openingHours:
         service.opening_hours ||
         service.openingHours ||
+        "",
+
+      imageKey:
+        service.image_key ||
+        service.imageKey ||
+        "",
+
+      imageUrl:
+        service.image_url ||
+        service.imageUrl ||
         "",
     };
   }
@@ -325,6 +364,9 @@ function ManageServices() {
       ...emptyForm,
     });
 
+    setSelectedImage(null);
+    setImagePreview("");
+
     setActionError("");
     setSuccessMessage("");
 
@@ -404,6 +446,9 @@ function ManageServices() {
       ...emptyForm,
     });
 
+    setSelectedImage(null);
+    setImagePreview("");
+
     setActionError("");
   };
 
@@ -450,6 +495,70 @@ function ManageServices() {
     };
 
 
+  // Validate the selected image locally before it is uploaded.
+  const handleImageChange =
+    (event) => {
+      const file =
+        event.target.files?.[0];
+
+      if (!file) {
+        return;
+      }
+
+      const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+      ];
+
+      if (
+        !allowedTypes.includes(
+          file.type
+        )
+      ) {
+        setActionError(
+          "Choose a JPEG, PNG or WebP image."
+        );
+
+        event.target.value = "";
+        return;
+      }
+
+      if (
+        file.size >
+        5 * 1024 * 1024
+      ) {
+        setActionError(
+          "Service images must be no larger than 5 MB."
+        );
+
+        event.target.value = "";
+        return;
+      }
+
+      setActionError("");
+      setSelectedImage(file);
+
+      setImagePreview(
+        URL.createObjectURL(file)
+      );
+    };
+
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview("");
+
+    setForm(
+      (current) => ({
+        ...current,
+        imageKey: "",
+        imageUrl: "",
+      })
+    );
+  };
+
+
   /* ======================================================
      BUILD PAYLOAD FOR AWS
 
@@ -457,7 +566,9 @@ function ManageServices() {
      Backend/RDS fields use snake_case.
   ====================================================== */
 
-  function buildServicePayload() {
+  function buildServicePayload(
+    imageKey = form.imageKey
+  ) {
     let websiteUrl =
       form.websiteUrl.trim();
 
@@ -529,6 +640,9 @@ function ManageServices() {
       opening_hours:
         form.openingHours.trim(),
 
+      image_url:
+        imageKey || null,
+
       status:
         form.status,
     };
@@ -549,8 +663,23 @@ function ManageServices() {
 
 
       try {
+        let imageKey =
+          form.imageKey || null;
+
+        if (selectedImage) {
+          const uploadedImage =
+            await uploadServiceImage(
+              selectedImage
+            );
+
+          imageKey =
+            uploadedImage.imageKey;
+        }
+
         const payload =
-          buildServicePayload();
+          buildServicePayload(
+            imageKey
+          );
 
 
         console.log(
@@ -596,6 +725,9 @@ function ManageServices() {
         setForm({
           ...emptyForm,
         });
+
+        setSelectedImage(null);
+        setImagePreview("");
 
 
         /* ================================================
@@ -1265,10 +1397,20 @@ function ManageServices() {
                             <div className="services-name-cell">
 
                               <div className="services-name-icon">
-                                {service.category ===
-                                "Accommodation"
-                                  ? "🏠"
-                                  : "🍲"}
+                                {service.imageUrl ? (
+                                  <img
+                                    src={
+                                      service.imageUrl
+                                    }
+                                    alt=""
+                                    className="services-name-thumbnail"
+                                  />
+                                ) : (
+                                  service.category ===
+                                  "Accommodation"
+                                    ? "🏠"
+                                    : "🍲"
+                                )}
                               </div>
 
 
@@ -1842,6 +1984,98 @@ function ManageServices() {
                     }
                     placeholder="e.g. 9:00am - 5:00pm"
                   />
+
+                </div>
+
+
+                {/* Optional image for the service listing */}
+
+                <div className="services-form-field full">
+
+                  <label htmlFor="service-image">
+                    Service Image
+                  </label>
+
+                  <div className="services-image-upload">
+
+                    <div className="services-image-preview">
+
+                      {(
+                        imagePreview ||
+                        form.imageUrl
+                      ) ? (
+                        <img
+                          src={
+                            imagePreview ||
+                            form.imageUrl
+                          }
+                          alt="Service preview"
+                        />
+                      ) : (
+                        <div className="services-image-placeholder">
+                          <span>🖼️</span>
+                          <strong>
+                            No image selected
+                          </strong>
+                        </div>
+                      )}
+
+                    </div>
+
+
+                    <div className="services-image-controls">
+
+                      <label
+                        htmlFor="service-image"
+                        className="services-image-choose"
+                      >
+                        {(
+                          imagePreview ||
+                          form.imageUrl
+                        )
+                          ? "Replace Image"
+                          : "Choose Image"}
+                      </label>
+
+                      <input
+                        id="service-image"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={
+                          handleImageChange
+                        }
+                        disabled={
+                          saving
+                        }
+                      />
+
+                      {(
+                        imagePreview ||
+                        form.imageUrl ||
+                        form.imageKey
+                      ) && (
+                        <button
+                          type="button"
+                          className="services-image-remove"
+                          onClick={
+                            handleRemoveImage
+                          }
+                          disabled={
+                            saving
+                          }
+                        >
+                          Remove Image
+                        </button>
+                      )}
+
+                      <p>
+                        JPEG, PNG or WebP.
+                        Maximum size 5 MB.
+                      </p>
+
+                    </div>
+
+                  </div>
 
                 </div>
 

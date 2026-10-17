@@ -21,6 +21,11 @@ Parameters:
     AllowedPattern: '^[a-z][a-z0-9-]*$'
     ConstraintDescription: Use lowercase letters, numbers, and hyphens, beginning with a letter
 
+  AssetsCorsAllowedOrigin:
+    Type: String
+    Default: '*'
+    Description: Frontend origin allowed to upload service images directly to the private assets bucket
+
   VpcCidr:
     Type: String
     Default: 10.0.0.0/16
@@ -388,6 +393,17 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - '*'
+            AllowedMethods:
+              - PUT
+            AllowedOrigins:
+              - !Ref AssetsCorsAllowedOrigin
+            ExposedHeaders:
+              - ETag
+            MaxAge: 300
       LifecycleConfiguration:
         Rules:
           - Id: MoveOldObjectsToLowerCostStorage
