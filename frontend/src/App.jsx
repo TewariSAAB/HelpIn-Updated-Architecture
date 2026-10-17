@@ -32,6 +32,9 @@ import JobDetails
 import Login
   from "./pages/Login.jsx";
 
+import Contact
+  from "./pages/Contact.jsx";
+
 
 /* ======================================================
    ADMIN PAGES
@@ -51,6 +54,9 @@ import ViewListings
 
 import AdminLogs
   from "./pages/admin/AdminLogs.jsx";
+
+import AdminContactMessages
+  from "./pages/admin/AdminContactMessages.jsx";
 
 
 /* ======================================================
@@ -162,6 +168,14 @@ function App() {
       />
 
 
+      <Route
+        path="/contact"
+        element={
+          <Contact />
+        }
+      />
+
+
       {/* ==================================================
           ADMIN DASHBOARD
       ================================================== */}
@@ -220,6 +234,22 @@ function App() {
           <ProtectedAdminPage>
 
             <ViewListings />
+
+          </ProtectedAdminPage>
+        }
+      />
+
+
+      {/* ==================================================
+          CONTACT MESSAGES
+      ================================================== */}
+
+      <Route
+        path="/admin/contact-messages"
+        element={
+          <ProtectedAdminPage>
+
+            <AdminContactMessages />
 
           </ProtectedAdminPage>
         }
