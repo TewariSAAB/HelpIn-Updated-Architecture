@@ -244,6 +244,91 @@ export async function deleteService(
 
 
 /* ======================================================
+   SERVICE IMAGE UPLOAD
+====================================================== */
+
+export async function uploadServiceImage(
+  file
+) {
+  const allowedTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+  ];
+
+  const maxSize =
+    5 * 1024 * 1024;
+
+  if (
+    !file ||
+    !allowedTypes.includes(
+      file.type
+    )
+  ) {
+    throw new Error(
+      "Choose a JPEG, PNG or WebP image."
+    );
+  }
+
+  if (file.size > maxSize) {
+    throw new Error(
+      "Service images must be no larger than 5 MB."
+    );
+  }
+
+  const uploadDetails =
+    await apiRequest(
+      "/admin/service-image-upload",
+      {
+        method: "POST",
+        auth: true,
+        body: {
+          file_name:
+            file.name,
+          content_type:
+            file.type,
+          file_size:
+            file.size,
+        },
+      }
+    );
+
+  if (
+    !uploadDetails?.upload_url ||
+    !uploadDetails?.image_key
+  ) {
+    throw new Error(
+      "The image upload could not be prepared."
+    );
+  }
+
+  const uploadResponse =
+    await fetch(
+      uploadDetails.upload_url,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type":
+            file.type,
+        },
+        body: file,
+      }
+    );
+
+  if (!uploadResponse.ok) {
+    throw new Error(
+      "The image could not be uploaded to storage."
+    );
+  }
+
+  return {
+    imageKey:
+      uploadDetails.image_key,
+  };
+}
+
+
+/* ======================================================
    JOBS
 ====================================================== */
 
