@@ -10,9 +10,33 @@ const {
   PutEventsCommand
 } = require("@aws-sdk/client-eventbridge");
 
+const {
+  S3Client,
+  PutObjectCommand
+} = require("@aws-sdk/client-s3");
+
+const {
+  getSignedUrl
+} = require("@aws-sdk/s3-request-presigner");
+
+const {
+  randomUUID
+} = require("crypto");
+
 
 const secretsClient = new SecretsManagerClient({});
 const eventBridgeClient = new EventBridgeClient({});
+const s3Client = new S3Client({});
+
+
+const MAX_SERVICE_IMAGE_BYTES =
+  5 * 1024 * 1024;
+
+const SERVICE_IMAGE_TYPES = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp"
+};
 
 
 /*
@@ -177,6 +201,108 @@ exports.handler = async (event) => {
   if (!isAdmin(event)) {
     return response(403, {
       message: "Admin access is required"
+    });
+  }
+
+
+  /*
+  ----------------------------------------------------------
+  Create a short-lived S3 upload URL for service images.
+  POST /admin/service-image-upload
+  ----------------------------------------------------------
+  */
+
+  const uploadPath =
+    event.resource ||
+    event.path ||
+    "";
+
+  if (
+    event.httpMethod === "POST" &&
+    uploadPath.includes(
+      "/admin/service-image-upload"
+    )
+  ) {
+    let uploadBody = {};
+
+    try {
+      uploadBody =
+        event.body
+          ? JSON.parse(event.body)
+          : {};
+    } catch {
+      return response(400, {
+        message: "Request body must be valid JSON"
+      });
+    }
+
+    const contentType =
+      String(
+        uploadBody.content_type ||
+        uploadBody.contentType ||
+        ""
+      ).toLowerCase();
+
+    const fileSize =
+      Number(
+        uploadBody.file_size ||
+        uploadBody.fileSize ||
+        0
+      );
+
+    const extension =
+      SERVICE_IMAGE_TYPES[contentType];
+
+    if (!extension) {
+      return response(400, {
+        message:
+          "Only JPEG, PNG and WebP images are allowed"
+      });
+    }
+
+    if (
+      !Number.isFinite(fileSize) ||
+      fileSize <= 0 ||
+      fileSize > MAX_SERVICE_IMAGE_BYTES
+    ) {
+      return response(400, {
+        message:
+          "Service images must be no larger than 5 MB"
+      });
+    }
+
+    if (!process.env.ASSETS_BUCKET) {
+      return response(500, {
+        message:
+          "Assets bucket is not configured"
+      });
+    }
+
+    const imageKey =
+      `services/${randomUUID()}.${extension}`;
+
+    const uploadUrl =
+      await getSignedUrl(
+        s3Client,
+        new PutObjectCommand({
+          Bucket:
+            process.env.ASSETS_BUCKET,
+          Key:
+            imageKey,
+          ContentType:
+            contentType
+        }),
+        {
+          expiresIn: 300
+        }
+      );
+
+    return response(200, {
+      upload_url: uploadUrl,
+      image_key: imageKey,
+      expires_in: 300,
+      max_size_bytes:
+        MAX_SERVICE_IMAGE_BYTES
     });
   }
 
