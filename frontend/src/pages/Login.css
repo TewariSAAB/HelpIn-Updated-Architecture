@@ -11,6 +11,8 @@
   width: 100%;
   min-height: 100vh;
 
+  overflow-x: hidden;
+
   display: grid;
 
   grid-template-columns:
@@ -1009,83 +1011,44 @@
 
 
 /* ======================================================
-   MOBILE
+   TABLET / MOBILE
 ====================================================== */
 
-@media (max-width: 760px) {
+@media (max-width: 860px) {
 
   .split-login-page {
     display: block;
   }
 
   .split-login-left {
-    min-height: 390px;
-
-    padding:
-      28px 24px;
-  }
-
-  .split-login-brand strong {
-    font-size: 24px;
-  }
-
-  .split-login-brand span {
-    font-size: 7px;
-  }
-
-  .split-login-logo {
-    width: 41px;
-    height: 41px;
-  }
-
-  .split-login-quote {
-    padding:
-      35px 8px
-      20px;
-  }
-
-  .quote-mark {
-    height: 45px;
-
-    font-size: 65px;
-  }
-
-  .split-login-quote h1 {
-    font-size: 43px;
-  }
-
-  .quote-line {
-    margin:
-      19px 0 14px;
-  }
-
-  .split-login-quote p {
-    font-size: 16px;
-  }
-
-  .split-login-left-footer {
     display: none;
   }
 
   .split-login-right {
-    min-height: auto;
+    width: 100%;
+    min-height: 100vh;
 
     padding:
-      50px 16px
-      35px;
+      72px 20px
+      38px;
+
+    align-items: flex-start;
   }
 
   .split-login-back {
-    top: 13px;
-    right: 15px;
+    top: 18px;
+    right: 20px;
   }
 
   .split-login-card {
-    max-width: 500px;
+    width: 100%;
+    max-width: 620px;
+
+    margin: 0 auto;
 
     padding:
-      32px 22px
-      28px;
+      34px 28px
+      30px;
 
     border-radius: 19px;
   }
@@ -1102,14 +1065,6 @@
 ====================================================== */
 
 @media (max-width: 420px) {
-
-  .split-login-left {
-    min-height: 340px;
-  }
-
-  .split-login-quote h1 {
-    font-size: 37px;
-  }
 
   .split-login-card {
     padding:
