@@ -1052,6 +1052,148 @@
 
 
 /* ======================================================
+   SERVICE IMAGES
+====================================================== */
+
+.services-name-icon {
+  overflow: hidden;
+}
+
+.services-name-thumbnail {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+}
+
+.services-image-upload {
+  padding: 14px;
+
+  display: grid;
+
+  grid-template-columns:
+    180px 1fr;
+
+  gap: 18px;
+
+  border: 1px solid #d7e3ef;
+  border-radius: 12px;
+
+  background: #fbfdff;
+}
+
+.services-image-preview {
+  width: 180px;
+  height: 120px;
+
+  overflow: hidden;
+
+  border: 1px solid #d7e3ef;
+  border-radius: 10px;
+
+  background: #edf6ff;
+}
+
+.services-image-preview img {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+}
+
+.services-image-placeholder {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  color: #7d89a4;
+
+  text-align: center;
+}
+
+.services-image-placeholder span {
+  font-size: 28px;
+}
+
+.services-image-placeholder strong {
+  font-size: 11px;
+}
+
+.services-image-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  align-items: center;
+
+  gap: 10px;
+}
+
+.services-image-controls input[type="file"] {
+  position: absolute;
+
+  width: 1px;
+  height: 1px;
+
+  opacity: 0;
+  pointer-events: none;
+}
+
+.services-image-choose,
+.services-image-remove {
+  min-height: 42px;
+
+  padding: 0 15px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 9px;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.services-image-choose {
+  border: none;
+
+  background: #2772ff;
+
+  color: #ffffff;
+}
+
+.services-image-remove {
+  border: 1px solid #ffd0d0;
+
+  background: #fff4f4;
+
+  color: #c73d3d;
+}
+
+.services-image-controls p {
+  width: 100%;
+
+  margin: 0;
+
+  color: #8b96ad;
+
+  font-size: 11px;
+}
+
+
+/* ======================================================
    MODAL BUTTONS
 ====================================================== */
 
@@ -1238,6 +1380,16 @@
 ====================================================== */
 
 @media (max-width: 560px) {
+
+  .services-image-upload {
+    grid-template-columns: 1fr;
+  }
+
+  .services-image-preview {
+    width: 100%;
+    height: 180px;
+  }
+
 
   .services-admin-brand strong {
     font-size: 21px;
