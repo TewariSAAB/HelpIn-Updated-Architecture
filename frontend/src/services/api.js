@@ -456,13 +456,54 @@ export async function getRecommendations(
 export async function sendContactMessage(
   message
 ) {
-  return apiRequest(
-    "/contact",
-    {
-      method: "POST",
-      body: message,
+  const response =
+    await fetch(
+      `${API_BASE_URL}/contact`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type":
+            "text/plain;charset=UTF-8",
+        },
+        body:
+          JSON.stringify(message),
+      }
+    );
+
+  const text =
+    await response.text();
+
+  let data = null;
+
+  if (text) {
+    try {
+      data =
+        JSON.parse(text);
+    } catch {
+      data = text;
     }
-  );
+  }
+
+  if (!response.ok) {
+    let messageText =
+      `Request failed with status ${response.status}.`;
+
+    if (
+      data &&
+      typeof data === "object"
+    ) {
+      messageText =
+        data.message ||
+        data.error ||
+        messageText;
+    }
+
+    throw new Error(
+      messageText
+    );
+  }
+
+  return data;
 }
 
 
