@@ -1,55 +1,62 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
+import { getJobs } from "../services/api";
 import "./Jobs.css";
 
 
-const jobsData = [
-  {
-    id: 1,
-    title: "Warehouse Assistant",
-    company: "City Logistics Ltd",
-    location: "London",
-    jobType: "Full-time",
-    pay: "£12.50/hr",
-    experience: "No experience required",
-    category: "Warehouse",
-    description:
-      "Support day-to-day warehouse activities including organising stock, preparing orders and maintaining a safe working area.",
-    icon: "📦",
-  },
+function getJobIcon(category = "") {
+  const value =
+    String(category).toLowerCase();
 
-  {
-    id: 2,
-    title: "Kitchen Assistant",
-    company: "Community Kitchen Ltd",
-    location: "Manchester",
-    jobType: "Part-time",
-    pay: "£11.80/hr",
-    experience: "No experience required",
-    category: "Hospitality",
-    description:
-      "Help with food preparation, cleaning and general kitchen tasks in a welcoming and supportive working environment.",
-    icon: "👨‍🍳",
-  },
+  if (value.includes("warehouse")) {
+    return "📦";
+  }
 
-  {
-    id: 3,
-    title: "Retail Assistant",
-    company: "City Retail Ltd",
-    location: "Birmingham",
-    jobType: "Part-time",
-    pay: "£12/hr",
-    experience: "Beginner friendly",
-    category: "Retail",
-    description:
-      "Assist customers, organise shelves and support everyday store activities with training provided for new staff.",
-    icon: "🛍️",
-  },
-];
+  if (
+    value.includes("hospitality") ||
+    value.includes("kitchen") ||
+    value.includes("food")
+  ) {
+    return "👨‍🍳";
+  }
+
+  if (
+    value.includes("retail") ||
+    value.includes("shop")
+  ) {
+    return "🛍️";
+  }
+
+  if (
+    value.includes("clean") ||
+    value.includes("maintenance")
+  ) {
+    return "🧹";
+  }
+
+  if (
+    value.includes("care") ||
+    value.includes("support")
+  ) {
+    return "🤝";
+  }
+
+  return "💼";
+}
+
 
 
 function Jobs() {
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const [jobsData, setJobsData] =
+    useState([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [loadError, setLoadError] =
+    useState("");
 
   const [location, setLocation] = useState("");
   const [jobType, setJobType] = useState("");
@@ -58,6 +65,87 @@ function Jobs() {
     location: "",
     jobType: "",
   });
+
+
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadJobs() {
+      try {
+        setLoading(true);
+        setLoadError("");
+
+        const response =
+          await getJobs();
+
+        const jobs =
+          Array.isArray(response)
+            ? response
+            : response?.jobs || [];
+
+        const formattedJobs =
+          jobs.map((job) => ({
+            id: job.id,
+            title:
+              job.title || "",
+            company:
+              job.company || "",
+            location:
+              job.location || "",
+            jobType:
+              job.job_type ||
+              job.jobType ||
+              "",
+            pay:
+              job.pay || "Pay not specified",
+            experience:
+              job.experience_requirement ||
+              job.experienceRequirement ||
+              "Experience requirement not specified",
+            category:
+              job.category || "Job",
+            description:
+              job.description || "",
+            externalUrl:
+              job.external_url ||
+              job.externalUrl ||
+              "",
+            icon:
+              getJobIcon(
+                job.category
+              ),
+          }));
+
+        if (active) {
+          setJobsData(
+            formattedJobs
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Unable to load jobs:",
+          error
+        );
+
+        if (active) {
+          setLoadError(
+            "Unable to load jobs right now."
+          );
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadJobs();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
 
   const closeMenu = () => {
@@ -100,7 +188,7 @@ function Jobs() {
 
       return locationMatches && typeMatches;
     });
-  }, [appliedFilters]);
+  }, [jobsData, appliedFilters]);
 
 
   return (
@@ -540,7 +628,43 @@ function Jobs() {
 
           {/* NO RESULTS */}
 
-          {filteredJobs.length === 0 ? (
+          {loading ? (
+
+            <div className="jobs-no-results">
+
+              <div className="jobs-no-results-icon">
+                ⌛
+              </div>
+
+              <h3>
+                Loading jobs...
+              </h3>
+
+              <p>
+                Fetching the latest opportunities.
+              </p>
+
+            </div>
+
+          ) : loadError ? (
+
+            <div className="jobs-no-results">
+
+              <div className="jobs-no-results-icon">
+                ⚠
+              </div>
+
+              <h3>
+                Unable to load jobs
+              </h3>
+
+              <p>
+                {loadError}
+              </p>
+
+            </div>
+
+          ) : filteredJobs.length === 0 ? (
 
             <div className="jobs-no-results">
 
