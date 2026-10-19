@@ -1,59 +1,94 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Link,
   NavLink,
   useParams,
 } from "react-router-dom";
 
+import {
+  getJobById,
+  getJobs,
+} from "../services/api";
+
 import "./JobDetails.css";
 
 
-const jobs = [
-  {
-    id: "1",
-    title: "Warehouse Assistant",
-    company: "City Logistics Ltd",
-    category: "Warehouse",
-    jobType: "Full-time",
-    location: "London",
-    pay: "£12.50/hr",
-    experience: "No experience required",
-    description:
-      "Support day-to-day warehouse activities including organising stock, preparing orders and maintaining a safe working area. This role is suitable for people looking to begin working in warehouse and logistics environments.",
-    icon: "📦",
-    externalUrl: "https://www.example.org",
-  },
+function getJobIcon(category = "") {
+  const value =
+    String(category).toLowerCase();
 
-  {
-    id: "2",
-    title: "Kitchen Assistant",
-    company: "Community Kitchen Ltd",
-    category: "Hospitality",
-    jobType: "Part-time",
-    location: "Manchester",
-    pay: "£11.80/hr",
-    experience: "No experience required",
-    description:
-      "Help with food preparation, cleaning and general kitchen duties in a welcoming working environment. Training can be provided for applicants who are new to hospitality work.",
-    icon: "👨‍🍳",
-    externalUrl: "https://www.example.org",
-  },
+  if (value.includes("warehouse")) {
+    return "📦";
+  }
 
-  {
-    id: "3",
-    title: "Retail Assistant",
-    company: "City Retail Ltd",
-    category: "Retail",
-    jobType: "Part-time",
-    location: "Birmingham",
-    pay: "£12/hr",
-    experience: "Beginner friendly",
+  if (
+    value.includes("hospitality") ||
+    value.includes("kitchen") ||
+    value.includes("food")
+  ) {
+    return "👨‍🍳";
+  }
+
+  if (
+    value.includes("retail") ||
+    value.includes("shop")
+  ) {
+    return "🛍️";
+  }
+
+  if (
+    value.includes("clean") ||
+    value.includes("maintenance")
+  ) {
+    return "🧹";
+  }
+
+  if (
+    value.includes("care") ||
+    value.includes("support")
+  ) {
+    return "🤝";
+  }
+
+  return "💼";
+}
+
+
+function formatJob(item) {
+  return {
+    id:
+      String(item.id),
+    title:
+      item.title || "",
+    company:
+      item.company || "",
+    category:
+      item.category || "Job",
+    jobType:
+      item.job_type ||
+      item.jobType ||
+      "",
+    location:
+      item.location || "",
+    pay:
+      item.pay || "Pay not specified",
+    experience:
+      item.experience_requirement ||
+      item.experienceRequirement ||
+      "Experience requirement not specified",
     description:
-      "Assist customers, organise shelves and support everyday store activities. This role is suitable for people looking to gain experience working in retail.",
-    icon: "🛍️",
-    externalUrl: "https://www.example.org",
-  },
-];
+      item.description || "",
+    icon:
+      getJobIcon(
+        item.category
+      ),
+    externalUrl:
+      item.external_url ||
+      item.externalUrl ||
+      "",
+  };
+}
+
 
 
 function JobDetails() {
@@ -62,10 +97,87 @@ function JobDetails() {
   const [menuOpen, setMenuOpen] =
     useState(false);
 
+  const [job, setJob] =
+    useState(null);
 
-  const job = jobs.find(
-    (item) => item.id === id
-  );
+  const [relatedJobs, setRelatedJobs] =
+    useState([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [loadError, setLoadError] =
+    useState("");
+
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadJob() {
+      try {
+        setLoading(true);
+        setLoadError("");
+
+        const [
+          jobResponse,
+          jobsResponse,
+        ] = await Promise.all([
+          getJobById(id),
+          getJobs(),
+        ]);
+
+        const rawJob =
+          jobResponse?.job ||
+          jobResponse;
+
+        const allJobs =
+          Array.isArray(jobsResponse)
+            ? jobsResponse
+            : jobsResponse?.jobs || [];
+
+        if (active) {
+          setJob(
+            formatJob(
+              rawJob
+            )
+          );
+
+          setRelatedJobs(
+            allJobs
+              .filter(
+                (item) =>
+                  String(item.id) !==
+                  String(rawJob.id)
+              )
+              .slice(0, 3)
+              .map(formatJob)
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Unable to load job:",
+          error
+        );
+
+        if (active) {
+          setJob(null);
+          setLoadError(
+            "This job listing could not be loaded."
+          );
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadJob();
+
+    return () => {
+      active = false;
+    };
+  }, [id]);
 
 
   const closeMenu = () => {
@@ -73,7 +185,26 @@ function JobDetails() {
   };
 
 
-  if (!job) {
+  if (loading) {
+    return (
+      <div className="job-details-not-found">
+
+        <div>
+
+          <span>⌛</span>
+
+          <h1>
+            Loading job...
+          </h1>
+
+        </div>
+
+      </div>
+    );
+  }
+
+
+  if (!job || loadError) {
     return (
       <div className="job-details-not-found">
 
@@ -86,7 +217,8 @@ function JobDetails() {
           </h1>
 
           <p>
-            This job listing could not be found.
+            {loadError ||
+              "This job listing could not be found."}
           </p>
 
           <Link to="/jobs">
@@ -98,11 +230,6 @@ function JobDetails() {
       </div>
     );
   }
-
-
-  const relatedJobs = jobs
-    .filter((item) => item.id !== job.id)
-    .slice(0, 3);
 
 
   return (
