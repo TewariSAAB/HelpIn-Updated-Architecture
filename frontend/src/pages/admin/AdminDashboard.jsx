@@ -793,26 +793,6 @@ function AdminDashboard() {
 
 
             <NavLink
-              to="/admin/contact-messages"
-              className={({ isActive }) =>
-                `admin-sidebar-link ${
-                  isActive
-                    ? "active"
-                    : ""
-                }`
-              }
-            >
-
-              <span className="admin-sidebar-icon">
-                ✉
-              </span>
-
-              Contact Messages
-
-            </NavLink>
-
-
-            <NavLink
               to="/admin/logs"
               className={({ isActive }) =>
                 `admin-sidebar-link ${

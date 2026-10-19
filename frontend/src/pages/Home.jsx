@@ -1247,9 +1247,9 @@ function Home() {
           </h4>
 
 
-          <Link to="/contact">
+          <a href="mailto:dhruvtewari99@gmail.com?subject=HelpIn%20Enquiry">
             Contact HelpIn
-          </Link>
+          </a>
 
 
           <p>
