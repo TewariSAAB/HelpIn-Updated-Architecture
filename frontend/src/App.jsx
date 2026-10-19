@@ -37,6 +37,9 @@ import JobDetails
 import Login
   from "./pages/Login.jsx";
 
+import About
+  from "./pages/About.jsx";
+
 
 
 /* ======================================================
@@ -218,6 +221,14 @@ function App() {
         path="/login"
         element={
           <Login />
+        }
+      />
+
+
+      <Route
+        path="/about"
+        element={
+          <About />
         }
       />
 
