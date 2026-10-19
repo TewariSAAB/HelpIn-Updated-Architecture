@@ -1223,9 +1223,9 @@ function Home() {
           </h4>
 
 
-          <a href="#about">
+          <Link to="/about">
             About HelpIn
-          </a>
+          </Link>
 
 
           <a href="#news">
