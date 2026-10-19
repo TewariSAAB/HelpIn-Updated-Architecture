@@ -1399,3 +1399,58 @@ input::-webkit-outer-spin-button {
   }
 
 }
+
+/* ======================================================
+   MOBILE CARD VISIBILITY FIX
+====================================================== */
+@media (max-width: 600px) {
+  .accommodation-card {
+    height: auto !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column;
+    overflow: visible;
+  }
+
+  .accommodation-card-image {
+    height: 200px !important;
+    min-height: 200px !important;
+    flex-shrink: 0;
+  }
+
+  .accommodation-card-content {
+    min-height: 0;
+    padding: 20px 18px 18px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .accommodation-card h3 {
+    min-height: 0;
+    max-height: none;
+    margin-bottom: 10px;
+    overflow: visible;
+    display: block;
+    font-size: 21px;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+
+  .accommodation-description {
+    min-height: 0;
+    max-height: none;
+    -webkit-line-clamp: 3;
+    margin: 14px 0 18px;
+  }
+
+  .accommodation-card-actions {
+    margin-top: 4px;
+  }
+
+  .view-details-button {
+    width: 100%;
+    min-height: 48px;
+    display: flex;
+    justify-content: center;
+  }
+}
