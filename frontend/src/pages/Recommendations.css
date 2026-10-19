@@ -1512,3 +1512,63 @@
   }
 
 }
+
+/* RESPONSIVE CARD CONTENT FIX - 2026-10-19 */
+@media (max-width: 768px) {
+  .rec-results-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rec-result-card {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: hidden;
+  }
+
+  .rec-card-image {
+    height: clamp(170px, 45vw, 230px);
+    flex-shrink: 0;
+  }
+
+  .rec-card-content {
+    min-height: 0;
+    padding: 20px 18px 18px;
+  }
+
+  .rec-card-content h3 {
+    min-height: 0 !important;
+    max-height: none !important;
+    margin-bottom: 10px;
+    overflow: visible !important;
+    display: block !important;
+    -webkit-line-clamp: unset !important;
+    font-size: 20px;
+    overflow-wrap: anywhere;
+  }
+
+  .rec-card-location {
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .rec-card-location span {
+    overflow: visible;
+    display: block;
+    -webkit-line-clamp: unset;
+    overflow-wrap: anywhere;
+  }
+
+  .rec-card-description {
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 14px 0 18px;
+    -webkit-line-clamp: 3;
+  }
+
+  .rec-view-button {
+    width: 100%;
+    min-height: 48px;
+    margin-top: 4px;
+    flex-shrink: 0;
+  }
+}
