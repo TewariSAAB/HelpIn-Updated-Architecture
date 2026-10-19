@@ -1,87 +1,8 @@
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
+import { getRecommendations } from "../services/api";
 import "./Recommendations.css";
 
-
-const recommendationData = [
-  {
-    id: 1,
-    targetId: 1,
-    title: "Riverside Apartments",
-    category: "Accommodation",
-    location: "London",
-    price: 600,
-    serviceType: "Accommodation",
-    description:
-      "Affordable shared accommodation with useful transport links and essential local services.",
-    icon: "🏠",
-  },
-
-  {
-    id: 2,
-    targetId: 4,
-    title: "Hope Community Food Bank",
-    category: "Food Support",
-    location: "London",
-    price: 0,
-    serviceType: "Food Support",
-    description:
-      "Free food parcels and grocery support for individuals and families who need additional help.",
-    icon: "🥫",
-  },
-
-  {
-    id: 3,
-    targetId: 1,
-    title: "Warehouse Assistant",
-    category: "Jobs",
-    location: "London",
-    price: 0,
-    serviceType: "Jobs",
-    description:
-      "A beginner-friendly full-time warehouse opportunity with no previous experience required.",
-    icon: "📦",
-  },
-
-  {
-    id: 4,
-    targetId: 5,
-    title: "St. Mary's Community Kitchen",
-    category: "Food Support",
-    location: "Birmingham",
-    price: 0,
-    serviceType: "Food Support",
-    description:
-      "Community meals and food support in a welcoming local environment.",
-    icon: "🍲",
-  },
-
-  {
-    id: 5,
-    targetId: 2,
-    title: "Maple House",
-    category: "Accommodation",
-    location: "Birmingham",
-    price: 450,
-    serviceType: "Accommodation",
-    description:
-      "Affordable shared housing suitable for people looking for a simple and comfortable place to stay.",
-    icon: "🏡",
-  },
-
-  {
-    id: 6,
-    targetId: 2,
-    title: "Kitchen Assistant",
-    category: "Jobs",
-    location: "Manchester",
-    price: 0,
-    serviceType: "Jobs",
-    description:
-      "A part-time beginner-friendly hospitality role with training available.",
-    icon: "👨‍🍳",
-  },
-];
 
 
 function Recommendations() {
@@ -94,6 +15,8 @@ function Recommendations() {
 
   const [recommendations, setRecommendations] = useState([]);
   const [searched, setSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState("");
 
 
   const closeMenu = () => {
@@ -101,81 +24,215 @@ function Recommendations() {
   };
 
 
-  const handleRecommendations = () => {
-    let results = recommendationData.filter((item) => {
-      const locationMatches =
-        !location ||
-        item.location
-          .toLowerCase()
-          .includes(location.toLowerCase());
+  const handleRecommendations = async () => {
+    try {
+      setLoading(true);
+      setLoadError("");
 
-      const typeMatches =
-        !serviceType ||
-        item.serviceType === serviceType;
+      const params = {};
 
-      let budgetMatches = true;
-
-      if (
-        serviceType === "Accommodation" &&
-        budget
-      ) {
-        budgetMatches =
-          item.price <= Number(budget);
+      if (location.trim()) {
+        params.location =
+          location.trim();
       }
 
-      return (
-        locationMatches &&
-        typeMatches &&
-        budgetMatches
+      if (
+        budget &&
+        serviceType !== "Jobs"
+      ) {
+        params.maxPrice =
+          budget;
+      }
+
+      if (
+        serviceType ===
+        "Accommodation"
+      ) {
+        params.category =
+          "Accommodation";
+      }
+
+      if (
+        serviceType ===
+        "Food Support"
+      ) {
+        params.category =
+          "Food Support";
+      }
+
+      const response =
+        await getRecommendations(
+          params
+        );
+
+      const services =
+        Array.isArray(
+          response?.services
+        )
+          ? response.services
+          : [];
+
+      const jobs =
+        Array.isArray(
+          response?.jobs
+        )
+          ? response.jobs
+          : [];
+
+      const serviceResults =
+        services.map(
+          (service) => ({
+            id:
+              `service-${service.id}`,
+            targetId:
+              service.id,
+            title:
+              service.name || "",
+            category:
+              service.category || "",
+            location:
+              service.location || "",
+            price:
+              Number(
+                service.price
+              ) || 0,
+            costType:
+              service.cost_type || "",
+            serviceType:
+              service.service_type ||
+              service.category ||
+              "",
+            description:
+              service.description || "",
+            icon:
+              service.category ===
+              "Accommodation"
+                ? "🏠"
+                : "🍲",
+            recommendationScore:
+              Number(
+                service.recommendationScore
+              ) || 0,
+          })
+        );
+
+      const jobResults =
+        jobs.map(
+          (job) => ({
+            id:
+              `job-${job.id}`,
+            targetId:
+              job.id,
+            title:
+              job.title || "",
+            category:
+              "Jobs",
+            location:
+              job.location || "",
+            price:
+              0,
+            costType:
+              "",
+            serviceType:
+              "Jobs",
+            description:
+              job.description || "",
+            icon:
+              "💼",
+            recommendationScore:
+              Number(
+                job.recommendationScore
+              ) || 0,
+          })
+        );
+
+      let results = [];
+
+      if (
+        serviceType ===
+        "Jobs"
+      ) {
+        results =
+          jobResults;
+      } else if (
+        serviceType ===
+          "Accommodation" ||
+        serviceType ===
+          "Food Support"
+      ) {
+        results =
+          serviceResults;
+      } else {
+        results = [
+          ...serviceResults,
+          ...jobResults,
+        ].sort(
+          (a, b) =>
+            b.recommendationScore -
+            a.recommendationScore
+        );
+      }
+
+      if (
+        additionalNeeds.trim()
+      ) {
+        const need =
+          additionalNeeds
+            .trim()
+            .toLowerCase();
+
+        results =
+          [...results].sort(
+            (a, b) => {
+              const aText =
+                `${a.title} ${a.description} ${a.serviceType}`
+                  .toLowerCase();
+
+              const bText =
+                `${b.title} ${b.description} ${b.serviceType}`
+                  .toLowerCase();
+
+              const aMatch =
+                aText.includes(
+                  need
+                )
+                  ? 1
+                  : 0;
+
+              const bMatch =
+                bText.includes(
+                  need
+                )
+                  ? 1
+                  : 0;
+
+              return (
+                bMatch -
+                aMatch
+              );
+            }
+          );
+      }
+
+      setRecommendations(
+        results
       );
-    });
 
+      setSearched(true);
+    } catch (error) {
+      console.error(
+        "Unable to load recommendations:",
+        error
+      );
 
-    /*
-      Simple rule-based ranking.
-      Exact location receives higher priority.
-    */
-
-    results = [...results].sort((a, b) => {
-      let scoreA = 0;
-      let scoreB = 0;
-
-      if (
-        location &&
-        a.location.toLowerCase() ===
-          location.toLowerCase()
-      ) {
-        scoreA += 3;
-      }
-
-      if (
-        location &&
-        b.location.toLowerCase() ===
-          location.toLowerCase()
-      ) {
-        scoreB += 3;
-      }
-
-      if (
-        serviceType &&
-        a.serviceType === serviceType
-      ) {
-        scoreA += 2;
-      }
-
-      if (
-        serviceType &&
-        b.serviceType === serviceType
-      ) {
-        scoreB += 2;
-      }
-
-      return scoreB - scoreA;
-    });
-
-
-    setRecommendations(results);
-    setSearched(true);
+      setRecommendations([]);
+      setSearched(true);
+      setLoadError(
+        "Unable to load recommendations right now."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
 
@@ -187,6 +244,8 @@ function Recommendations() {
 
     setRecommendations([]);
     setSearched(false);
+    setLoadError("");
+    setLoading(false);
   };
 
 
@@ -642,12 +701,15 @@ function Recommendations() {
                 type="button"
                 className="rec-submit-button"
                 onClick={handleRecommendations}
+                disabled={loading}
               >
                 <span>
-                  ✨
+                  {loading ? "⌛" : "✨"}
                 </span>
 
-                Get Recommendations
+                {loading
+                  ? "Finding Matches..."
+                  : "Get Recommendations"}
               </button>
 
             </div>
@@ -724,7 +786,32 @@ function Recommendations() {
             </div>
 
 
-            {recommendations.length === 0 ? (
+            {loadError ? (
+
+              <div className="rec-no-results">
+
+                <div className="rec-no-results-icon">
+                  ⚠
+                </div>
+
+                <h3>
+                  Recommendations unavailable
+                </h3>
+
+                <p>
+                  {loadError}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={clearPreferences}
+                >
+                  Try again
+                </button>
+
+              </div>
+
+            ) : recommendations.length === 0 ? (
 
               <div className="rec-no-results">
 
@@ -832,10 +919,12 @@ function Recommendations() {
                         <p className="rec-price">
                           £{item.price}
 
-                          <span>
-                            {" "}
-                            / month
-                          </span>
+                          {item.costType && (
+                            <span>
+                              {" "}
+                              {item.costType}
+                            </span>
+                          )}
                         </p>
                       )}
 
