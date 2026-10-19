@@ -500,7 +500,8 @@
 
 
 .jobs-card {
-  min-height: 245px;
+  height: 310px;
+  min-height: 310px;
 
   display: grid;
 
@@ -536,7 +537,7 @@
 /* IMAGE */
 
 .jobs-card-image {
-  min-height: 245px;
+  min-height: 310px;
 
   display: flex;
   align-items: center;
@@ -608,7 +609,15 @@
 
 
 .jobs-card-heading h3 {
+  min-height: 64px;
+
   margin: 0 0 5px;
+
+  overflow: hidden;
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 
   color: #0e1b4d;
 
@@ -617,7 +626,13 @@
 
 
 .jobs-company {
+  min-height: 22px;
+
   margin: 0;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 
   color: #78839d;
 
@@ -691,8 +706,16 @@
 
 .jobs-description {
   max-width: 690px;
+  min-height: 50px;
+  max-height: 50px;
 
   margin: 15px 0 19px;
+
+  overflow: hidden;
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 
   color: #66718c;
 
