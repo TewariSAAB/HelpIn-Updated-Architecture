@@ -933,7 +933,9 @@ function Accommodation() {
             Accessibility
           </span>
 
-          <a href="mailto:dhruvtewari99@gmail.com?subject=HelpIn%20Enquiry">
+          <a href="https://mail.google.com/mail/?view=cm&fs=1&to=dhruvtewari99%40gmail.com&su=HelpIn%20Enquiry"
+            target="_blank"
+            rel="noreferrer">
             Contact HelpIn
           </a>
 
