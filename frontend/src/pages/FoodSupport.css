@@ -605,7 +605,15 @@
 
 
 .food-card-heading h3 {
+  min-height: 64px;
+
   margin: 0;
+
+  overflow: hidden;
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 
   color: #0e1b4d;
 
@@ -658,8 +666,16 @@
 
 .food-description {
   max-width: 650px;
+  min-height: 50px;
+  max-height: 50px;
 
   margin: 17px 0 20px;
+
+  overflow: hidden;
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 
   color: #66718c;
 
