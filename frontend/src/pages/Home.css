@@ -1939,3 +1939,49 @@
     grid-auto-columns: 90%;
   }
 }
+
+/* RESPONSIVE RECENT CARD FIX - 2026-10-19 */
+@media (max-width: 768px) {
+  .home-recent-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-recent-card {
+    height: auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .home-recent-image {
+    height: clamp(190px, 48vw, 250px);
+    flex-shrink: 0;
+  }
+
+  .home-recent-content {
+    min-height: 0;
+    padding: 20px 18px 18px;
+  }
+
+  .home-recent-content h3 {
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+    display: block;
+    -webkit-line-clamp: unset;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  .home-recent-content p {
+    min-height: 0;
+    max-height: none;
+    margin-bottom: 16px;
+    -webkit-line-clamp: 3;
+  }
+
+  .home-recent-content strong {
+    margin-top: 4px;
+    display: block;
+    padding-top: 4px;
+  }
+}
