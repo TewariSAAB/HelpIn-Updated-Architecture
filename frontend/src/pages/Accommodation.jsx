@@ -933,9 +933,9 @@ function Accommodation() {
             Accessibility
           </span>
 
-          <Link to="/contact">
+          <a href="mailto:dhruvtewari99@gmail.com?subject=HelpIn%20Enquiry">
             Contact HelpIn
-          </Link>
+          </a>
 
         </div>
 
