@@ -585,7 +585,8 @@ input::-webkit-outer-spin-button {
 
 
 .accommodation-card {
-  min-height: 240px;
+  height: 290px;
+  min-height: 290px;
 
   display: grid;
 
@@ -625,7 +626,7 @@ input::-webkit-outer-spin-button {
 .accommodation-card-image {
   position: relative;
 
-  min-height: 240px;
+  min-height: 290px;
 
   display: flex;
   align-items: center;
@@ -743,7 +744,15 @@ input::-webkit-outer-spin-button {
 
 
 .accommodation-card h3 {
+  min-height: 64px;
+
   margin: 0;
+
+  overflow: hidden;
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 
   color: #0e1b4d;
 
@@ -809,8 +818,16 @@ input::-webkit-outer-spin-button {
 
 .accommodation-description {
   max-width: 650px;
+  min-height: 50px;
+  max-height: 50px;
 
   margin: 17px 0 20px;
+
+  overflow: hidden;
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 
   color: #66718c;
 
