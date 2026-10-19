@@ -1221,3 +1221,82 @@
   }
 
 }
+
+/* RESPONSIVE CARD CONTENT FIX - 2026-10-19 */
+@media (max-width: 768px) {
+  .jobs-card {
+    height: auto !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .jobs-card-image {
+    width: 100%;
+    height: clamp(190px, 48vw, 250px);
+    min-height: clamp(190px, 48vw, 250px);
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .jobs-card-content {
+    min-height: 0;
+    padding: 20px 18px 18px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .jobs-card-heading {
+    display: block;
+  }
+
+  .jobs-card-heading h3 {
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 0 7px;
+    overflow: visible !important;
+    display: block !important;
+    -webkit-line-clamp: unset !important;
+    font-size: 21px;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+
+  .jobs-company {
+    min-height: 0;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .jobs-pay {
+    width: fit-content;
+    margin-top: 12px;
+  }
+
+  .jobs-description {
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 14px 0 18px;
+    overflow: visible;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  .jobs-card-actions {
+    margin-top: 4px;
+  }
+
+  .jobs-view-button {
+    width: 100%;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    text-decoration: none;
+  }
+}
