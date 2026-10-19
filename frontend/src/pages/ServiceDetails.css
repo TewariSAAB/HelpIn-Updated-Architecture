@@ -602,7 +602,12 @@
 
 
 .details-related-card {
+  height: 305px;
+
   overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
 
   border: 1px solid #e1e9f3;
   border-radius: 16px;
@@ -664,6 +669,11 @@
 
 .details-related-content {
   padding: 20px;
+
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
 }
 
 
@@ -694,7 +704,15 @@
 
 
 .details-related-content h3 {
+  min-height: 48px;
+
   margin: 0 0 7px;
+
+  overflow: hidden;
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 
   color: #0e1b4d;
 
@@ -703,7 +721,16 @@
 
 
 .details-related-content p {
+  min-height: 42px;
+  max-height: 42px;
+
   margin: 0;
+
+  overflow: hidden;
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 
   color: #748098;
 
