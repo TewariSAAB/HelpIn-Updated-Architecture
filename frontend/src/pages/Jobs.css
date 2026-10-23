@@ -500,13 +500,14 @@
 
 
 .jobs-card {
-  height: 310px;
+  /* Let desktop cards grow so the action button is never clipped. */
+  height: auto;
   min-height: 310px;
 
   display: grid;
 
   grid-template-columns:
-    280px 1fr;
+    280px minmax(0, 1fr);
 
   overflow: hidden;
 
@@ -575,6 +576,7 @@
 /* CARD CONTENT */
 
 .jobs-card-content {
+  min-width: 0;
   padding: 27px 30px;
 
   display: flex;
@@ -588,6 +590,12 @@
   justify-content: space-between;
 
   gap: 20px;
+}
+
+/* Allow long titles and company names to wrap inside the card. */
+.jobs-card-heading > div:first-child {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 
@@ -668,6 +676,7 @@
 
 
 .jobs-meta > div {
+  min-width: 0;
   display: flex;
   align-items: center;
 
@@ -678,6 +687,11 @@
   font-size: 14px;
 }
 
+
+.jobs-meta > div span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 
 .jobs-meta svg {
   width: 18px;
@@ -1280,7 +1294,8 @@
     min-height: 0 !important;
     max-height: none !important;
     margin: 14px 0 18px;
-    overflow: visible;
+    /* Line-clamped text must be hidden, or it paints over the next card. */
+    overflow: hidden;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
