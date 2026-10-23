@@ -720,7 +720,8 @@
 ====================================================== */
 
 .rec-result-card {
-  height: 525px;
+  /* Expand naturally for long listing text and the View Details button. */
+  height: auto;
   min-height: 525px;
 
   overflow: hidden;
@@ -799,6 +800,7 @@
 ====================================================== */
 
 .rec-card-content {
+  min-width: 0;
   padding: 23px;
 
   flex: 1;
@@ -863,6 +865,7 @@
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
 
   color: #0e1b4d;
 
@@ -892,7 +895,9 @@
 }
 
 .rec-card-location span {
+  min-width: 0;
   overflow: hidden;
+  overflow-wrap: anywhere;
 
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -980,6 +985,7 @@
 .rec-card-description {
   min-height: 92px;
   max-height: 92px;
+  overflow-wrap: anywhere;
 
   margin: 16px 0 20px;
 
